@@ -3,12 +3,39 @@ import { useState } from "react";
 import { Heart } from "lucide-react";
 
 export default function MemoryCard({ memory }) {
-  const [likes, setLikes] = useState(memory.likes || Math.floor(Math.random() * 50 + 1));
+  console.log(memory);
+  const [likes, setLikes] = useState(memory.likes);
   const [liked, setLiked] = useState(false);
 
-  const handleLike = () => {
-    setLikes(liked ? likes - 1 : likes + 1);
-    setLiked(!liked);
+  const handleLike = async () => {
+    const photo_id = memory.id;
+    const user_id = localStorage.getItem("user");
+
+    const formData = new URLSearchParams();
+    formData.append("user_id", user_id);
+
+    const endpoint = liked
+      ? `https://api.doubleehbatteries.com/photos/${photo_id}/unlike?user_id=${user_id}`
+      : `https://api.doubleehbatteries.com/photos/${photo_id}/like?user_id=${user_id}`;
+    const method = "POST";
+
+    try {
+      const response = await fetch(endpoint, {
+        method: method,
+        headers: {},
+        body: formData,
+      });
+
+      if (response.ok) {
+        setLikes(liked ? likes - 1 : likes + 1);
+        setLiked(!liked);
+      } else {
+        const errorData = await response.json();
+        console.error("Failed to update like status:", errorData.detail);
+      }
+    } catch (error) {
+      console.error("Error updating like status:", error);
+    }
   };
 
   const displayName = memory.userId

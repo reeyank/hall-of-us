@@ -2,28 +2,64 @@ import { uid } from "./feed/types";
 import { TAGS_POOL, USERS } from "./feed/constants";
 
 export async function fetchMemoriesStub(filters) {
-  await new Promise((r) => setTimeout(r, 300));
-  const base = generateSampleMemories(12, 1);
-  return base.filter((m) => {
-    if (filters?.tags && filters.tags.length && !filters.tags.some((t) => m.tags.includes(t))) return false;
-    if (filters?.userId && m.userId !== filters.userId) return false;
-    if (filters?.date && new Date(m.createdAt).toISOString().slice(0, 10) !== filters.date) return false;
-    return true;
-  });
+  try {
+    const response = await fetch('https://api.doubleehbatteries.com/photos');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch memories: ${response.status} ${response.statusText}`);
+    }
+    const data = await response.json();
+    const photos = data.photos || [];
+
+    // Transform API response to match expected format for MemoryCard
+    return photos.map(photo => ({
+      id: photo.id,
+      userId: photo.user_id || "unknown", // Use 'unknown' as default if user_id is null
+      s3Url: photo.url,
+      thumbnailUrl: photo.url, // Assuming thumbnail is the same as the full image URL
+      tags: photo.tags ? photo.tags.split(',').map(s => s.trim()).filter(Boolean) : [], // Split tags string into array
+      caption: photo.caption || "",
+      createdAt: new Date().toISOString(), // API doesn't provide, use current time for now
+      width: 900, // Placeholder
+      height: 600, // Placeholder
+      orientation: "horizontal", // Placeholder
+      likes: photo.likes || 0,
+      comments: 0, // Placeholder
+      processed: false // Placeholder
+    }));
+  } catch (error) {
+    console.error('Error fetching memories:', error);
+    return []; // Return an empty array on error
+  }
 }
 
 export async function uploadMemoryStub(payload) {
-  await new Promise((r) => setTimeout(r, 400));
-  return {
-    id: uid("uploaded"),
-    s3Url: URL.createObjectURL(payload.get("file")),
-    thumbnailUrl: URL.createObjectURL(payload.get("file")),
-    userId: "you",
-    tags: payload.get("tags")?.split(",").map((s) => s.trim()) || [],
-    caption: payload.get("caption") || "",
-    createdAt: new Date().toISOString(),
-    orientation: "vertical"
-  };
+  try {
+    const response = await fetch('https://api.doubleehbatteries.com/photos/upload', {
+      method: 'POST',
+      body: payload,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json()
+
+    // Transform API response to match expected format
+    return {
+      id: result.id || uid("uploaded"),
+      s3Url: result.url || URL.createObjectURL(payload.get("file")),
+      thumbnailUrl: result.url || URL.createObjectURL(payload.get("file")), // API doesn't provide separate thumbnail URL
+      userId: result.user_id || payload.get("user_id") || "you",
+      tags: result.tags ? result.tags.split(",").map((s) => s.trim()) : payload.get("tags")?.split(",").map((s) => s.trim()) || [],
+      caption: result.caption || payload.get("caption") || "",
+      createdAt: new Date().toISOString(), // API doesn't provide created timestamp
+      orientation: "vertical" // API doesn't provide orientation info
+    };
+  } catch (error) {
+    console.error('Upload error:', error);
+    throw error;
+  }
 }
 
 export function generateSampleMemories(n = 6, startSeed = 1) {
