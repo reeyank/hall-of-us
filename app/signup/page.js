@@ -40,6 +40,7 @@ export default function SignupPage() {
     try {
       // For demo purposes, we'll just store the user credentials
       // In a real app, you'd send this to your backend
+      // TODO: change those to not be stored in localStorage
       const existingUsers = JSON.parse(localStorage.getItem('users') || '[]');
 
       // Check if username already exists
