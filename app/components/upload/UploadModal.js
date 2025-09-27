@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { uploadMemoryStub } from "../api";
+import { uploadMemoryStub } from "../../feed/api";
 
 export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) {
   const [file, setFile] = useState(null);

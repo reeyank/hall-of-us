@@ -3,10 +3,10 @@ import React, { useState, useEffect, useMemo } from "react";
 import { fetchMemoriesStub } from "./api";
 import { PAGE_SIZE, DEFAULT_FEED_BG, PROCESSING_COLOR } from "./constants";
 
-import FiltersBar from "./filters/FiltersBar";
-import MemoryCard from "./memory/MemoryCard";
-import UploadModal from "./upload/UploadModal";
-import ChatPopup from "./chat/ChatPopup";
+import FiltersBar from "../components/filters/FiltersBar";
+import MemoryCard from "../components/memory/MemoryCard";
+import UploadModal from "../components/upload/UploadModal";
+import ChatPopup from "../components/chat/ChatPopup";
 
 export default function Page2() {
   const [memories, setMemories] = useState([]);
