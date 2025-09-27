@@ -1,3 +1,5 @@
+// TODO: replace stuff here like tags and users with db info
+
 export const PAGE_SIZE = 6;
 
 export const DEFAULT_FEED_BG = "bg-gray-50";

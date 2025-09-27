@@ -11,7 +11,6 @@ import UploadModal from "../components/upload/UploadModal";
 import ChatPopup from "../components/chat/ChatPopup";
 
 export default function Page() {
-  const [memories, setMemories] = useState([]);
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({});
@@ -38,12 +37,28 @@ export default function Page() {
     })();
   }, [filters, pageSize]);
 
-  const allTags = useMemo(() => Array.from(new Set(memories.flatMap((m) => m.tags))), [memories]);
-  const allUsers = useMemo(() => Array.from(new Set(memories.map((m) => m.userId))), [memories]);
+  const allTags = useMemo(() => Array.from(new Set(allMemories.flatMap((m) => m.tags))), [allMemories]);
+  const allUsers = useMemo(() => Array.from(new Set(allMemories.map((m) => m.userId))), [allMemories]);
 
   const handleApplyFilters = (f) => {
     setFilters(f);
     setFiltersOpen(false);
+
+    let filtered = [...allMemories]; 
+
+    if (f.tags && f.tags.length > 0) {
+      filtered = filtered.filter((m) => f.tags.every((tag) => m.tags.includes(tag)));
+    }
+
+    if (f.userId) {
+      filtered = filtered.filter((m) => m.userId === f.userId);
+    }
+
+    if (f.date) {
+      filtered = filtered.filter((m) => m.date === f.date);
+    }
+
+    setMemories(filtered.slice(0, pageSize));
   };
   const handleUploadCreated = (m) => setMemories((prev) => [m, ...prev]);
   const handleOpenEnhance = (preview) => { setChatPreview(preview); setChatOpen(true); };
@@ -130,7 +145,7 @@ export default function Page() {
           ) : (
             memories.map((m) => (
               <div key={m.id} className="transform transition-all duration-200 hover:scale-105">
-                <MemoryCard memory={m} onProcess={handleProcess} />
+                  <MemoryCard memory={m} onProcess={handleProcess} />
               </div>
             ))
           )}
