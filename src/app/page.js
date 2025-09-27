@@ -39,6 +39,21 @@ export default function Home() {
 
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
+              📸 Smart Camera
+            </h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              Take photos with your webcam and get AI-powered tag suggestions instantly.
+            </p>
+            <Link
+              href="/camera"
+              className="inline-block px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+            >
+              Open Camera
+            </Link>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
               🎯 Interactive Spells
             </h3>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
@@ -50,9 +65,7 @@ export default function Home() {
             >
               Try Spells
             </Link>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
+          </div>          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
               🧠 State Management
             </h3>
@@ -123,13 +136,16 @@ export default function Home() {
               <strong>1. Set up your API key:</strong> Add your OpenAI API key to the <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">.env.local</code> file.
             </p>
             <p>
-              <strong>2. Try the chat:</strong> The floating chat is already enabled. Ask it anything!
+              <strong>2. Try the camera:</strong> Click "Open Camera" to take photos and get AI-powered tag suggestions!
             </p>
             <p>
-              <strong>3. Explore demos:</strong> Click on any of the feature cards above to see CedarOS in action.
+              <strong>3. Chat with AI:</strong> The floating chat is already enabled. Ask it anything!
             </p>
             <p>
-              <strong>4. Build something amazing:</strong> Check the <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">.github-copilot-instructions.md</code> file for development guidelines.
+              <strong>4. Explore demos:</strong> Click on any of the feature cards above to see CedarOS in action.
+            </p>
+            <p>
+              <strong>5. Build something amazing:</strong> Check the <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">.github-copilot-instructions.md</code> file for development guidelines.
             </p>
           </div>
         </div>
