@@ -26,7 +26,7 @@ export function AuthProvider({ children }) {
 
         if (authStatus === 'true' && userData) {
           try {
-            const parsedUser = JSON.parse(userData);
+            const parsedUser = userData;
             setUser(parsedUser);
             setIsAuthenticated(true);
           } catch (error) {
@@ -44,7 +44,7 @@ export function AuthProvider({ children }) {
   const login = async (credentials) => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/signin', {
+      const response = await fetch('https://api.doubleehbatteries.com/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -55,7 +55,7 @@ export function AuthProvider({ children }) {
       if (response.ok) {
         if (typeof window !== 'undefined') {
           localStorage.setItem('isAuthenticated', 'true');
-          localStorage.setItem('user', JSON.stringify(data.user_id)); // Assuming API returns { user: userData }
+          localStorage.setItem('user', data.user_id); // Assuming API returns { user: userData }
         }
         setUser(data.user);
         setIsAuthenticated(true);
@@ -75,7 +75,7 @@ export function AuthProvider({ children }) {
   const signup = async (credentials) => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/signup', {
+      const response = await fetch('https://api.doubleehbatteries.com/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

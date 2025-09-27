@@ -1,40 +1,84 @@
 "use client";
-import React from "react";
-import Tag from "../ui/Tag";
+import { useState } from "react";
+import { Heart } from "lucide-react";
 
-export default function MemoryCard({ memory, onProcess }) {
+export default function MemoryCard({ memory }) {
+  console.log(memory);
+  const [likes, setLikes] = useState(memory.likes);
+  const [liked, setLiked] = useState(false);
+
+  const handleLike = async () => {
+    const photo_id = memory.id;
+    const user_id = localStorage.getItem("user");
+
+    const formData = new URLSearchParams();
+    formData.append("user_id", user_id);
+
+    const endpoint = liked
+      ? `https://api.doubleehbatteries.com/photos/${photo_id}/unlike?user_id=${user_id}`
+      : `https://api.doubleehbatteries.com/photos/${photo_id}/like?user_id=${user_id}`;
+    const method = "POST";
+
+    try {
+      const response = await fetch(endpoint, {
+        method: method,
+        headers: {},
+        body: formData,
+      });
+
+      if (response.ok) {
+        setLikes(liked ? likes - 1 : likes + 1);
+        setLiked(!liked);
+      } else {
+        const errorData = await response.json();
+        console.error("Failed to update like status:", errorData.detail);
+      }
+    } catch (error) {
+      console.error("Error updating like status:", error);
+    }
+  };
+
+  const displayName = memory.userId
+    ? memory.userId.charAt(0).toUpperCase() + memory.userId.slice(1)
+    : "User";
+
   return (
-    <article className="rounded-lg shadow-sm overflow-hidden bg-white w-full max-w-full">
-      <div className="relative">
+    <div
+      className="rounded-xl overflow-hidden shadow-lg max-w-md mx-auto my-4 border border-gray-700
+                 bg-gradient-to-br from-black/70 via-gray-900/50 to-black/70 backdrop-blur-md"
+    >
+      {/* Header: PFP + Name */}
+      <div className="flex items-center gap-3 p-3">
         <img
-          src={memory.thumbnailUrl}
-          alt={memory.caption}
-          className="w-full h-48 sm:h-72 object-cover"
+          src={memory.pfp || `https://i.pravatar.cc/40?u=${memory.userId}`}
+          alt={displayName}
+          className="w-10 h-10 rounded-full object-cover border border-gray-500"
         />
-        {memory.processed && (
-          <div className="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
-            Processed
-          </div>
-        )}
+        <span className="font-semibold text-white">{displayName}</span>
       </div>
-      <div className="p-3">
-        <div className="text-sm text-gray-600 flex flex-wrap gap-1">
-          {memory.tags.map((t, i) => <Tag key={`${t}-${i}`}>{t}</Tag>)}
-        </div>
-        <p className="mt-2 text-sm text-gray-800 break-words">{memory.caption}</p>
-        <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-gray-500">
-          <span className="break-all">{new Date(memory.createdAt).toLocaleString()}</span>
-          <div className="flex gap-2 items-center justify-between sm:justify-end">
-            <button className="px-2 py-1 rounded bg-blue-50 text-blue-600 text-sm hover:bg-blue-100 transition-colors" onClick={() => onProcess(memory.id)}>
-              Process
-            </button>
-            <div className="flex gap-3 text-xs">
-              <div>❤️ {memory.likes}</div>
-              <div>💬 {memory.comments}</div>
-            </div>
-          </div>
-        </div>
+
+      {/* Image */}
+      <img src={memory.s3Url} alt={memory.caption} className="w-full h-auto object-cover" />
+
+      {/* Caption + tags */}
+      <div className="p-3 text-white">
+        <p className="mt-1">{memory.caption}</p>
+        <p className="mt-1 text-blue-400">
+          {memory.tags.map((t) => `#${t} `)}
+        </p>
       </div>
-    </article>
+
+      {/* Actions row */}
+      <div className="flex items-center gap-2 p-3">
+        <button onClick={handleLike} className="transition-colors duration-200">
+          <Heart
+            size={24}
+            stroke={liked ? "red" : "white"}
+            fill={liked ? "red" : "none"}
+          />
+        </button>
+        <span className="text-white font-medium">{likes}</span>
+      </div>
+    </div>
   );
 }

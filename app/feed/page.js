@@ -206,10 +206,13 @@ export default function Page() {
       </button>
 
       <button
-        className="fixed right-4 bottom-4 z-40 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full w-14 h-14 shadow-2xl flex items-center justify-center text-white text-xl transition-all duration-200 transform hover:scale-110"
-        onClick={() => { setChatPreview(undefined); setChatOpen(true); }}
+      className="fixed right-4 bottom-4 z-40 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full w-14 h-14 shadow-2xl flex items-center justify-center text-white text-xl transition-all duration-200 transform hover:scale-110"
+      onClick={() => { 
+        setChatPreview(undefined);
+        setChatOpen(true); 
+      }}
       >
-        💬
+      💬
       </button>
 
       {/* Processing Notification */}
