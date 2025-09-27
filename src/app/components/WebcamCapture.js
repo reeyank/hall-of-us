@@ -10,11 +10,10 @@ export default function WebcamCapture() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState([]);
   const [error, setError] = useState(null);
+  const [cameraStatus, setCameraStatus] = useState('idle'); // idle, requesting, active, error
 
   const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-
-  const startCamera = useCallback(async () => {
+  const canvasRef = useRef(null);  const startCamera = useCallback(async () => {
     try {
       setError(null);
 
@@ -48,11 +47,25 @@ export default function WebcamCapture() {
 
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
 
+      console.log('Media stream obtained:', mediaStream);
+      console.log('Video tracks:', mediaStream.getVideoTracks());
+
       setStream(mediaStream);
       setIsStreaming(true);
 
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        console.log('Video srcObject set');
+
+        // Force play if needed
+        try {
+          await videoRef.current.play();
+          console.log('Video playing successfully');
+        } catch (playError) {
+          console.warn('Video play error (might be normal):', playError);
+        }
+      } else {
+        console.error('Video ref is null');
       }
     } catch (err) {
       console.error('Camera access error:', err);
@@ -198,12 +211,23 @@ export default function WebcamCapture() {
                     playsInline
                     muted
                     className="w-full h-full object-cover"
+                    onLoadedMetadata={() => {
+                      console.log('Video metadata loaded');
+                      console.log('Video dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
+                    }}
+                    onError={(e) => {
+                      console.error('Video error:', e);
+                      setError('Video display error: ' + e.message);
+                    }}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
-                      <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <div className="text-6xl mb-4">📹</div>
                       <p className="text-gray-500">Camera not started</p>
+                      <p className="text-sm text-gray-400 mt-2">
+                        Click "Start Camera" to begin
+                      </p>
                     </div>
                   </div>
                 )}
