@@ -41,13 +41,61 @@ export function AuthProvider({ children }) {
     checkAuth();
   }, []);
 
-  const login = (userData) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('user', JSON.stringify(userData));
+  const login = async (credentials) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:8000/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('isAuthenticated', 'true');
+          localStorage.setItem('user', JSON.stringify(data.user_id)); // Assuming API returns { user: userData }
+        }
+        setUser(data.user);
+        setIsAuthenticated(true);
+        return { success: true };
+      } else {
+        console.error('Login failed:', data.message);
+        return { success: false, message: data.message };
+      }
+    } catch (error) {
+      console.error('Network error during login:', error);
+      return { success: false, message: 'Network error' };
+    } finally {
+      setIsLoading(false);
     }
-    setUser(userData);
-    setIsAuthenticated(true);
+  };
+
+  const signup = async (credentials) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:8000/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        login(credentials);
+        return { success: true };
+      } else {
+        console.error('Signup failed:', data.message);
+        return { success: false, message: data.message };
+      }
+    } catch (error) {
+      console.error('Network error during signup:', error);
+      return { success: false, message: 'Network error' };
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const logout = () => {
@@ -65,6 +113,7 @@ export function AuthProvider({ children }) {
     isLoading,
     login,
     logout,
+    signup, // Add signup to the context value
   };
 
   return (

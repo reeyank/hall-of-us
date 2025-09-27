@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../components/AuthProvider';
 import Link from 'next/link';
@@ -14,7 +14,13 @@ export default function LoginPage() {
   const [error, setError] = useState('');
 
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/feed');
+    }
+  }, [isAuthenticated, router]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -30,27 +36,17 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await login({ username: formData.username, password: formData.password });
 
-      // For demo purposes, accept any username/password
-      if (formData.username && formData.password) {
-        // Use the auth context to login
-        const userData = {
-          username: formData.username,
-        };
-        console.log("Logging in user:", userData);
-
-        login(userData);
-        console.log("User logged in:", userData);
-
-        // Redirect to main app
+      if (result.success) {
+        console.log("User logged in:", formData.username);
         router.push('/feed');
       } else {
-        setError('Please fill in all fields');
+        setError(result.message || 'Login failed. Please check your credentials.');
       }
     } catch (err) {
-      setError('Login failed. Please try again.');
+      console.error("Login error:", err);
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
