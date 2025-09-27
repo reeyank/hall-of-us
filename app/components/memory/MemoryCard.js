@@ -4,7 +4,7 @@ import { Heart } from "lucide-react";
 
 export default function MemoryCard({ memory }) {
   console.log(memory);
-  const [likes, setLikes] = useState(memory.likes);
+  const [likes, setLikes] = useState(memory.likes || 0);
   const [liked, setLiked] = useState(false);
 
   const handleLike = async () => {
