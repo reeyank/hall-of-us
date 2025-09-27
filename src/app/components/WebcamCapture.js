@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Camera, Square, RotateCcw, Loader2, Tag, X } from 'lucide-react';
 
 export default function WebcamCapture() {
@@ -13,7 +13,18 @@ export default function WebcamCapture() {
   const [cameraStatus, setCameraStatus] = useState('idle'); // idle, requesting, active, error
 
   const videoRef = useRef(null);
-  const canvasRef = useRef(null);  const startCamera = useCallback(async () => {
+  const canvasRef = useRef(null);
+
+  // Effect to set video stream when both stream and videoRef are available
+  useEffect(() => {
+    if (stream && videoRef.current && isStreaming) {
+      console.log('Setting video stream via useEffect');
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(console.warn);
+    }
+  }, [stream, isStreaming]);
+
+  const startCamera = useCallback(async () => {
     try {
       setError(null);
 
@@ -50,23 +61,11 @@ export default function WebcamCapture() {
       console.log('Media stream obtained:', mediaStream);
       console.log('Video tracks:', mediaStream.getVideoTracks());
 
+      // Set stream and isStreaming - useEffect will handle the video element
       setStream(mediaStream);
       setIsStreaming(true);
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        console.log('Video srcObject set');
-
-        // Force play if needed
-        try {
-          await videoRef.current.play();
-          console.log('Video playing successfully');
-        } catch (playError) {
-          console.warn('Video play error (might be normal):', playError);
-        }
-      } else {
-        console.error('Video ref is null');
-      }
+      console.log('Stream state updated, useEffect will handle video element');
     } catch (err) {
       console.error('Camera access error:', err);
 
