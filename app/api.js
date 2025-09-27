@@ -35,27 +35,3 @@ export async function uploadMemoryStub(payload) {
     orientation: "vertical"
   };
 }
-
-export function generateSampleMemories(n = 6, startSeed = 1) {
-  const mems = [];
-  for (let i = 0; i < n; i++) {
-    const seed = startSeed + i;
-    const vertical = Math.random() > 0.6;
-    mems.push({
-      id: uid(String(seed)),
-      userId: USERS[(startSeed + i) % USERS.length],
-      s3Url: `https://picsum.photos/seed/${seed}/${vertical ? 600 : 900}/${vertical ? 900 : 600}`,
-      thumbnailUrl: `https://picsum.photos/seed/${seed}/${vertical ? 600 : 900}/${vertical ? 900 : 600}`,
-      tags: TAGS_POOL[(startSeed + i) % TAGS_POOL.length],
-      caption: `Sample caption ${seed}`,
-      createdAt: new Date(Date.now() - i * 1000 * 60 * 60).toISOString(),
-      width: vertical ? 600 : 900,
-      height: vertical ? 900 : 600,
-      orientation: vertical ? "vertical" : "horizontal",
-      likes: Math.floor(Math.random() * 30),
-      comments: Math.floor(Math.random() * 8),
-      processed: false
-    });
-  }
-  return mems;
-}
