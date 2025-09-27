@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { fetchMemoriesStub } from '../api';
+import UploadModal from '../components/upload/UploadModal';
+import ChatPopup from '../components/chat/ChatPopup';
 
 const PAGE_SIZE = 10;
 
@@ -178,6 +180,7 @@ export default function FeedPage() {
   const [filters, setFilters] = useState({});
   const [uploadOpen, setUploadOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatPreview, setChatPreview] = useState(undefined);
   const [processing, setProcessing] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -220,6 +223,9 @@ export default function FeedPage() {
     setPage(1); // Reset to first page on new filters
     setFiltersOpen(false);
   };
+
+  const handleUploadCreated = (m) => setAllMemories((prev) => [m, ...prev]);
+  const handleOpenEnhance = (preview) => { setChatPreview(preview); setChatOpen(true); };
 
   const handleProcess = async (memoryId) => {
     setProcessing(true);
@@ -338,7 +344,7 @@ export default function FeedPage() {
 
       <button
         className="fixed right-4 bottom-4 z-40 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full w-14 h-14 shadow-2xl flex items-center justify-center text-white text-xl transition-all duration-200 transform hover:scale-110"
-        onClick={() => setChatOpen(true)}
+        onClick={() => { setChatPreview(undefined); setChatOpen(true); }}
       >
         💬
       </button>
@@ -378,6 +384,23 @@ export default function FeedPage() {
             />
           </div>
         </div>
+      )}
+
+      {/* Modals */}
+      {uploadOpen && (
+        <UploadModal
+          open={uploadOpen}
+          onClose={() => setUploadOpen(false)}
+          onUpload={handleUploadCreated}
+          onOpenEnhance={handleOpenEnhance}
+        />
+      )}
+      {chatOpen && (
+        <ChatPopup
+          open={chatOpen}
+          onClose={() => setChatOpen(false)}
+          memoryPreview={chatPreview}
+        />
       )}
     </div>
   );
