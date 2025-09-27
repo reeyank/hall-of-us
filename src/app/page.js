@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { FloatingCedarChat } from '../../src/cedar/components/chatComponents/FloatingCedarChat';
+import { FloatingCedarChat } from '@/cedar/components/chatComponents/FloatingCedarChat';
 import Link from 'next/link';
 
 export default function Home() {
