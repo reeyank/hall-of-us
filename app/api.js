@@ -1,5 +1,5 @@
-import { uid } from "./types";
-import { TAGS_POOL, USERS } from "./constants";
+import { uid } from "./feed/types";
+import { TAGS_POOL, USERS } from "./feed/constants";
 
 export async function fetchMemoriesStub(filters) {
   await new Promise((r) => setTimeout(r, 300));
