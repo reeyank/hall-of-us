@@ -1,16 +1,12 @@
 "use client";
 
 import { CedarCopilot } from 'cedar-os';
+import LangChainProvider from './LangChainProvider';
 
 export default function CedarProvider({ children }) {
+  console.log('CedarProvider: Rendering CedarCopilot with LangChainProvider');
   return (
-    <CedarCopilot
-      llmProvider={{
-        // provider: 'openai',
-        // apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-        baseURL: 'http://localhost:8000', // Your LangChain backend URL
-      }}
-    >
+    <CedarCopilot llmProvider={LangChainProvider}>
       {children}
     </CedarCopilot>
   );
