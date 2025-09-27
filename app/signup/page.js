@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -8,8 +8,14 @@ import Link from 'next/link';
 export default function SignupPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const { login } = useAuth();
+  const { signup, isAuthenticated } = useAuth(); // Import signup
   const router = useRouter();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/feed');
+    }
+  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,32 +44,17 @@ export default function SignupPage() {
     }
 
     try {
-      // For demo purposes, we'll just store the user credentials
-      // In a real app, you'd send this to your backend
-      // TODO: change those to not be stored in localStorage
-      const existingUsers = JSON.parse(localStorage.getItem('users') || '[]');
+      const result = await signup({ username, password });
 
-      // Check if username already exists
-      if (existingUsers.find(user => user.username === username)) {
-        setError('Username already exists');
-        return;
-      }
-
-      // Add new user
-      const newUser = { username, password }; // In real app, hash the password!
-      existingUsers.push(newUser);
-      localStorage.setItem('users', JSON.stringify(existingUsers));
-
-      setSuccess('Account created successfully! Logging you in...');
-
-      // Auto-login after successful signup
-      setTimeout(() => {
-        login({ username });
+      if (result.success) {
+        setSuccess('Account created successfully! Redirecting...');
         router.push('/feed');
-      }, 1500);
-
-    } catch (error) {
-      setError('An error occurred during signup');
+      } else {
+        setError(result.message || 'An error occurred during signup.');
+      }
+    } catch (err) {
+      console.error("Signup error:", err);
+      setError('An unexpected error occurred. Please try again.');
     }
   };
 

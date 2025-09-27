@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { fetchMemoriesStub } from "../api";
 import { PAGE_SIZE, DEFAULT_FEED_BG, PROCESSING_COLOR } from "./constants";
+import { useAuth } from "../components/AuthProvider";
+import { useRouter } from 'next/navigation';
 
 import FiltersBar from "../components/filters/FiltersBar";
 import MemoryCard from "../components/memory/MemoryCard";
@@ -17,16 +19,15 @@ export default function Page() {
   const [chatPreview, setChatPreview] = useState(undefined);
   const [processing, setProcessing] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  
-  const [allMemories, setAllMemories] = useState([]);
-  useEffect(() => {
-    (async () => {
-      const results = await fetchMemoriesStub({}); 
-      setAllMemories(results);
-    })();
-  }, []);
 
-  const [memories, setMemories] = useState([]);
+  const { logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
+
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -87,6 +88,12 @@ export default function Page() {
                 Discover and share your memories
               </p>
             </div>
+            <button
+              onClick={handleLogout}
+              className="bg-white/10 backdrop-blur-md border border-white/30 text-white font-medium py-2 px-4 rounded-lg hover:bg-white/20 transition-all duration-200"
+            >
+              Logout
+            </button>
           </div>
         </div>
       </header>
