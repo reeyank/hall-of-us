@@ -8,21 +8,28 @@ import { useRouter } from 'next/navigation';
 import FiltersBar from "../components/filters/FiltersBar";
 import MemoryCard from "../components/memory/MemoryCard";
 import UploadModal from "../components/upload/UploadModal";
-import ChatPopup from "../components/chat/ChatPopup";
+import { FloatingCedarChat } from "../../src/cedar/components/chatComponents/FloatingCedarChat";
+import { useCedarStore } from 'cedar-os';
 
 export default function Page() {
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({});
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
   const [chatPreview, setChatPreview] = useState(undefined);
   const [processing, setProcessing] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+
+  const setShowChat = useCedarStore((state) => state.setShowChat);
+
   const [allMemories, setAllMemories] = useState([]);
   const [memories, setMemories] = useState([]);
   useEffect(() => {
+    (async () => {
+      const results = await fetchMemoriesStub({});
+      setAllMemories(results);
+    })();
     const fetchMemories = async () => {
       setLoading(true);
       try {
@@ -92,9 +99,25 @@ export default function Page() {
   const handleApplyFilters = (f) => {
     setFilters(f);
     setFiltersOpen(false);
+
+    let filtered = [...allMemories];
+
+    if (f.tags && f.tags.length > 0) {
+      filtered = filtered.filter((m) => f.tags.every((tag) => m.tags.includes(tag)));
+    }
+
+    if (f.userId) {
+      filtered = filtered.filter((m) => m.userId === f.userId);
+    }
+
+    if (f.date) {
+      filtered = filtered.filter((m) => m.date === f.date);
+    }
+
+    setMemories(filtered.slice(0, pageSize));
   };
   const handleUploadCreated = (m) => setMemories((prev) => [m, ...prev]);
-  const handleOpenEnhance = (preview) => { setChatPreview(preview); setChatOpen(true); };
+  const handleOpenEnhance = (preview) => { setChatPreview(preview); setShowChat(true); };
   const handleProcess = async (memoryId) => {
     setProcessing(true);
     await new Promise((r) => setTimeout(r, 1800));
@@ -208,9 +231,9 @@ export default function Page() {
 
       <button
       className="fixed right-4 bottom-4 z-40 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full w-14 h-14 shadow-2xl flex items-center justify-center text-white text-xl transition-all duration-200 transform hover:scale-110"
-      onClick={() => { 
+      onClick={() => {
         setChatPreview(undefined);
-        setChatOpen(true); 
+        setChatOpen(true);
       }}
       >
       💬
@@ -260,11 +283,7 @@ export default function Page() {
         onUpload={handleUploadCreated}
         onOpenEnhance={handleOpenEnhance}
       />
-      <ChatPopup
-        open={chatOpen}
-        onClose={() => setChatOpen(false)}
-        memoryPreview={chatPreview}
-      />
+      <FloatingCedarChat />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { uploadMemoryStub } from "../../api";
 import Tag from "../ui/Tag";
+import { useCedarStore } from "cedar-os";
 
 // Dummy tags for autocomplete (in real app, this would come from backend)
 const AVAILABLE_TAGS = [
@@ -24,6 +25,43 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
   const [showToast, setShowToast] = useState(false);
   const fileInputRef = useRef(null);
   const tagInputRef = useRef(null);
+  // Cedar: open chat and push context
+  const setShowChat = useCedarStore((s) => s.setShowChat);
+
+  const openCedarEnhance = (imgUrl) => {
+    try {
+      const store = useCedarStore.getState();
+
+      if (imgUrl) {
+        const contextKey = `uploaded_image_${Date.now()}`;
+        const contextValue = {
+          id: contextKey,
+          url: imgUrl,
+          label: 'Uploaded image',
+          source: 'upload-modal',
+        };
+
+        // Prefer the higher-level helper when available
+        if (typeof store.putAdditionalContext === 'function') {
+          store.putAdditionalContext(contextKey, contextValue, { icon: '🖼️', showInChat: true, labelField: 'label' });
+        } else if (typeof store.updateAdditionalContext === 'function') {
+          // fallback: merge into additionalContext
+          store.updateAdditionalContext({ [contextKey]: contextValue });
+        }
+      }
+    } catch (err) {
+      // non-fatal if cedar isn't available
+      console.warn('Cedar enhance failed to add context', err);
+    }
+
+    // Open the Cedar chat UI
+    try {
+      setShowChat(true);
+    } catch (e) {
+      console.log("Cedar chat store not available");
+      // ignore
+    }
+  };
 
   useEffect(() => {
     if (!file) return setPreview(null);
@@ -335,7 +373,10 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
                   </button>
                   <button
                     className="w-full py-3 px-4 rounded-lg font-medium transition-colors border border-gray-300 hover:bg-gray-50 text-gray-700"
-                    onClick={() => onOpenEnhance(preview ?? undefined)}
+                    onClick={() => {
+                      openCedarEnhance(preview ?? undefined);
+                      if (typeof onOpenEnhance === 'function') onOpenEnhance(preview ?? undefined);
+                    }}
                   >
                     ✨ Enhance with AI
                   </button>
