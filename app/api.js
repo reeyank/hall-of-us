@@ -1,5 +1,4 @@
 import { uid } from "./feed/types";
-import { TAGS_POOL, USERS } from "./feed/constants";
 
 export async function fetchMemoriesStub(filters) {
   const url = new URL('https://api.doubleehbatteries.com/photos');
