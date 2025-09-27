@@ -45,7 +45,7 @@ export default function LoginPage() {
         console.log("User logged in:", userData);
 
         // Redirect to main app
-        router.push('/');
+        router.push('/feed');
       } else {
         setError('Please fill in all fields');
       }
