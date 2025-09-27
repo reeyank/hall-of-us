@@ -158,13 +158,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Demo Info */}
-        <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
-          <p className="text-sm text-yellow-800 dark:text-yellow-200">
-            <strong>Demo:</strong> Enter any username and password to login
-          </p>
-        </div>
-
         {/* Back to Home */}
         <div className="mt-4 text-center">
           <Link href="/" className="text-sm text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors">
