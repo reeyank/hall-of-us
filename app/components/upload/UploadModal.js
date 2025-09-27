@@ -143,6 +143,7 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
       form.append("file", file);
       form.append("tags", selectedTags.join(","));
       form.append("caption", caption);
+      form.append("user_id", localStorage.getItem("user_id"));
 
       const created = await uploadMemoryStub(form);
 

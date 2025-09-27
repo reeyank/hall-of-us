@@ -22,15 +22,9 @@ export async function fetchMemoriesStub(filters) {
 }
 
 export async function uploadMemoryStub(payload) {
-  await new Promise((r) => setTimeout(r, 400));
-  return {
-    id: uid("uploaded"),
-    s3Url: URL.createObjectURL(payload.get("file")),
-    thumbnailUrl: URL.createObjectURL(payload.get("file")),
-    userId: "you",
-    tags: payload.get("tags")?.split(",").map((s) => s.trim()) || [],
-    caption: payload.get("caption") || "",
-    createdAt: new Date().toISOString(),
-    orientation: "vertical"
-  };
+  const response = await fetch('/api/upload', {
+    method: 'POST',
+    body: payload,
+  });
+  return response.json();
 }

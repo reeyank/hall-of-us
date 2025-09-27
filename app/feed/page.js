@@ -224,7 +224,7 @@ export default function FeedPage() {
     setFiltersOpen(false);
   };
 
-  const handleUploadCreated = (m) => setAllMemories((prev) => [m, ...prev]);
+  const handleUploadCreated = (m) => setAllMemories((prev) => [transformPhotoToMemory(m), ...prev]);
   const handleOpenEnhance = (preview) => { setChatPreview(preview); setChatOpen(true); };
 
   const handleProcess = async (memoryId) => {
