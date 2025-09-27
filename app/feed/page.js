@@ -108,9 +108,10 @@ export default function Page() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen bg-cover bg-center bg-fixed relative" style={{ backgroundImage: `url('/backdrop.png')` }}>
+      <div className="absolute inset-0 bg-black opacity-70"></div> {/* Dark overlay for readability */}
       {/* Header with glassmorphism */}
-      <header className="sticky top-0 z-50 bg-white/10 backdrop-blur-md border-b border-white/20">
+      <header className="sticky top-0 z-50 bg-white/20 backdrop-blur-xl border-b border-white/40">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -152,7 +153,7 @@ export default function Page() {
         </div>
 
         {/* Feed Grid */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6 w-full overflow-hidden">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6 w-full">
           {loading ? (
             <div className="col-span-full">
               <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-12 text-center">
