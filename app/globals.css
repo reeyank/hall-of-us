@@ -65,3 +65,7 @@ img {
 .animate-slide-up {
   animation: slide-up-from-bottom 0.3s ease-out forwards;
 }
+
+.cedar-floating-chat {
+  background: #1a1a1a;
+}
