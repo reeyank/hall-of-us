@@ -86,6 +86,13 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
   }, [open, step, showSuggestions, onClose]);
 
   const handleFileSelect = (selectedFile) => {
+    if (selectedFile) {
+      const fileType = selectedFile.type;
+      if (fileType !== 'image/png' && fileType !== 'image/jpeg') {
+        alert('Only PNG and JPG images are allowed.'); // Or a more sophisticated error message
+        return;
+      }
+    }
     setFile(selectedFile);
     if (selectedFile) {
       setStep(2); // Move to tags/caption step
@@ -179,7 +186,12 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
   const handleDrop = (e) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type.startsWith('image/')) {
+    if (droppedFile) {
+      const fileType = droppedFile.type;
+      if (fileType !== 'image/png' && fileType !== 'image/jpeg') {
+        alert('Only PNG and JPG images are allowed.'); // Or a more sophisticated error message
+        return;
+      }
       handleFileSelect(droppedFile);
     }
   };
@@ -225,7 +237,7 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/png, image/jpeg"
                   onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
                   className="hidden"
                 />
