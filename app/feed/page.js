@@ -283,7 +283,7 @@ export default function Page() {
         onUpload={handleUploadCreated}
         onOpenEnhance={handleOpenEnhance}
       />
-      <FloatingCedarChat />
+      <FloatingCedarChat stream={false} />
     </div>
   );
 }
