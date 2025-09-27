@@ -20,6 +20,24 @@ export default function Page() {
   const [processing, setProcessing] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  const [allMemories, setAllMemories] = useState([]);
+  const [memories, setMemories] = useState([]);
+  useEffect(() => {
+    const fetchMemories = async () => {
+      setLoading(true);
+      try {
+        const results = await fetchMemoriesStub({});
+        setAllMemories(results);               // master list
+        setMemories(results.slice(0, pageSize)); // initial paginated list
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMemories();
+  }, []);
+
+
   const { logout } = useAuth();
   const router = useRouter();
 
@@ -28,37 +46,52 @@ export default function Page() {
     router.push('/login');
   };
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const results = await fetchMemoriesStub(filters);
-      setMemories(results.slice(0, pageSize));
-      setLoading(false);
-    })();
-  }, [filters, pageSize]);
+  const allTags = useMemo(
+    () => Array.from(new Set(allMemories.flatMap((m) => m.tags))),
+    [allMemories]
+  );
+  const allUsers = useMemo(
+    () => Array.from(new Set(allMemories.map((m) => m.userId))),
+    [allMemories]
+  );
 
-  const allTags = useMemo(() => Array.from(new Set(allMemories.flatMap((m) => m.tags))), [allMemories]);
-  const allUsers = useMemo(() => Array.from(new Set(allMemories.map((m) => m.userId))), [allMemories]);
+  useEffect(() => {
+    setLoading(true);
+
+    const filtered = allMemories.filter((m) => {
+      if (filters.tags && filters.tags.length > 0) {
+        if (!filters.tags.every((tag) => m.tags.includes(tag))) return false;
+      }
+
+      if (filters.userId && m.userId !== filters.userId) return false;
+
+      if (filters.date) {
+        const memDate = new Date(m.createdAt);
+        if (isNaN(memDate.getTime())) return false;
+
+        // normalize memDate to YYYY-MM-DD
+        const memDateStr = memDate.toISOString().split("T")[0];
+
+        // normalize user input date to YYYY-MM-DD
+        let filterDate = filters.date;
+        if (filterDate.includes("/")) {
+          const [month, day, year] = filterDate.split("/");
+          filterDate = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+        }
+
+        if (memDateStr !== filterDate) return false;
+      }
+
+      return true;
+    });
+
+    setMemories(filtered.slice(0, pageSize));
+    setLoading(false);
+  }, [filters, pageSize, allMemories]);
 
   const handleApplyFilters = (f) => {
     setFilters(f);
     setFiltersOpen(false);
-
-    let filtered = [...allMemories]; 
-
-    if (f.tags && f.tags.length > 0) {
-      filtered = filtered.filter((m) => f.tags.every((tag) => m.tags.includes(tag)));
-    }
-
-    if (f.userId) {
-      filtered = filtered.filter((m) => m.userId === f.userId);
-    }
-
-    if (f.date) {
-      filtered = filtered.filter((m) => m.date === f.date);
-    }
-
-    setMemories(filtered.slice(0, pageSize));
   };
   const handleUploadCreated = (m) => setMemories((prev) => [m, ...prev]);
   const handleOpenEnhance = (preview) => { setChatPreview(preview); setChatOpen(true); };
