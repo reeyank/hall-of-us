@@ -1,14 +1,35 @@
 "use client";
 
 import { CedarCopilot, ProviderConfig } from "cedar-os";
+import type {
+  CustomParams,
+  BaseParams,
+  LLMResponse,
+  StreamHandler,
+  StreamResponse,
+  StreamEvent,
+} from "cedar-os";
 import { AuthProvider } from "./AuthProvider";
-import LangChainProvider from "./LangChainProvider";
 
-export default function ClientWrapper({ children }) {
+// Define custom parameter types for additional payload
+interface LangChainCustomParams extends CustomParams {
+  // Add any LangChain-specific parameters here
+  // For example:
+  // model?: string;
+  // frequency_penalty?: number;
+  // presence_penalty?: number;
+  // top_p?: number;
+  // stop?: string[];
+  // [key: string]: unknown; // Already included via CustomParams
+}
+
+type LangChainConfig = { provider: 'custom'; config: Record<string, unknown> };
+
+export default function ClientWrapper({ children }: { children: React.ReactNode }) {
   const LangChainProvider: ProviderConfig = {
     provider: "custom",
     config: {
-      callLLM: async (params, config) => {
+      callLLM: async (params: LangChainCustomParams, config: LangChainConfig): Promise<LLMResponse> => {
         const { prompt, systemPrompt, temperature, maxTokens, ...rest } =
           params;
         console.log("callLLM: LangChainProvider called with params:", params);
@@ -37,10 +58,10 @@ export default function ClientWrapper({ children }) {
 
         console.log("callLLM: LangChainProvider received response:", response);
 
-        return LangChainProvider.handleResponse(response);
+        return (LangChainProvider as any).config.handleResponse(response);
       },
 
-      callLLMStructured: async (params, config) => {
+      callLLMStructured: async (params: LangChainCustomParams & any, config: LangChainConfig): Promise<LLMResponse> => {
         const {
           prompt,
           systemPrompt,
@@ -54,7 +75,7 @@ export default function ClientWrapper({ children }) {
           params
         );
 
-        const body = {
+        const body: any = {
           messages: [
             ...(systemPrompt
               ? [{ role: "system", content: systemPrompt }]
@@ -94,7 +115,7 @@ export default function ClientWrapper({ children }) {
           }
         );
 
-        const result = await LangChainProvider.handleResponse(response);
+        const result = await (LangChainProvider as any).config.handleResponse(response);
         console.log("callLLMStructured: Received result:", result);
 
         // Parse structured output if schema was provided
@@ -109,7 +130,7 @@ export default function ClientWrapper({ children }) {
         return result;
       },
 
-      streamLLM: (params, config, handler) => {
+      streamLLM: (params: LangChainCustomParams, config: LangChainConfig, handler: StreamHandler): StreamResponse => {
         console.log("streamLLM: LangChainProvider called with params:", params);
         const abortController = new AbortController();
 
@@ -147,8 +168,8 @@ export default function ClientWrapper({ children }) {
             }
 
             // Handle Server-Sent Events stream
-            await LangChainProvider.config.handleEventStream(response, {
-              onMessage: (chunk) => {
+            await (LangChainProvider as any).config.handleEventStream(response, {
+              onMessage: (chunk: string) => {
                 // Parse your API's streaming format
                 try {
                   const data = JSON.parse(chunk);
@@ -161,7 +182,7 @@ export default function ClientWrapper({ children }) {
                 }
               },
               onDone: () => {
-                handler({ type: "done" });
+                handler({ type: "done", completedItems: [] });
               },
             });
           } catch (error) {
@@ -177,7 +198,7 @@ export default function ClientWrapper({ children }) {
         };
       },
 
-      handleResponse: async (response) => {
+      handleResponse: async (response: Response): Promise<LLMResponse> => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -190,8 +211,9 @@ export default function ClientWrapper({ children }) {
         };
       },
 
-      handleEventStream: async (response, { onMessage, onDone }) => {
-        const reader = response.body.getReader();
+      handleEventStream: async (response: Response, { onMessage, onDone }: { onMessage: (chunk: string) => void; onDone: () => void }) => {
+        const reader = response.body?.getReader();
+        if (!reader) return;
         const decoder = new TextDecoder();
         let buffer = "";
 
