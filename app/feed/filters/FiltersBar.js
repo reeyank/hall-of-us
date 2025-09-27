@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 
-export default function FiltersBar({ tagsList, users, onApply }: { tagsList: string[], users: string[], onApply: (filters: any) => void }) {
+export default function FiltersBar({ tagsList, users, onApply }) {
   const [tag, setTag] = useState("");
   const [userId, setUserId] = useState("");
   const [date, setDate] = useState("");

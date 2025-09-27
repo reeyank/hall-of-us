@@ -1,9 +1,8 @@
 "use client";
 import React from "react";
-import { Memory } from "../types";
 import Tag from "../ui/Tag";
 
-export default function MemoryCard({ memory, onProcess }: { memory: Memory; onProcess: (id: string) => void }) {
+export default function MemoryCard({ memory, onProcess }) {
   return (
     <article className="rounded-lg shadow-sm overflow-hidden bg-white">
       <div className="relative">

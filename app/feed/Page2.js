@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import { Memory } from "./types";
 import { fetchMemoriesStub } from "./api";
 import { PAGE_SIZE, DEFAULT_FEED_BG, PROCESSING_COLOR } from "./constants";
 
@@ -10,13 +9,13 @@ import UploadModal from "./upload/UploadModal";
 import ChatPopup from "./chat/ChatPopup";
 
 export default function Page2() {
-  const [memories, setMemories] = useState<Memory[]>([]);
+  const [memories, setMemories] = useState([]);
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({});
   const [uploadOpen, setUploadOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [chatPreview, setChatPreview] = useState<string | undefined>(undefined);
+  const [chatPreview, setChatPreview] = useState(undefined);
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
@@ -31,10 +30,10 @@ export default function Page2() {
   const allTags = useMemo(() => Array.from(new Set(memories.flatMap((m) => m.tags))), [memories]);
   const allUsers = useMemo(() => Array.from(new Set(memories.map((m) => m.userId))), [memories]);
 
-  const handleApplyFilters = (f: any) => setFilters(f);
-  const handleUploadCreated = (m: Memory) => setMemories((prev) => [m, ...prev]);
-  const handleOpenEnhance = (preview?: string) => { setChatPreview(preview); setChatOpen(true); };
-  const handleProcess = async (memoryId: string) => {
+  const handleApplyFilters = (f) => setFilters(f);
+  const handleUploadCreated = (m) => setMemories((prev) => [m, ...prev]);
+  const handleOpenEnhance = (preview) => { setChatPreview(preview); setChatOpen(true); };
+  const handleProcess = async (memoryId) => {
     setProcessing(true);
     await new Promise((r) => setTimeout(r, 1800));
     setMemories((prev) =>

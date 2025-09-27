@@ -1,14 +1,13 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { Memory } from "../types";
 import { uploadMemoryStub } from "../api";
 
-export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }: { open: boolean; onClose: () => void; onUpload: (m: Memory) => void; onOpenEnhance: (preview?: string) => void }) {
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) {
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [tags, setTags] = useState("");
   const [caption, setCaption] = useState("");
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     if (!file) return setPreview(null);

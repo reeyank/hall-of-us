@@ -1,7 +1,7 @@
-import { Memory, uid } from "./types";
+import { uid } from "./types";
 import { TAGS_POOL, USERS } from "./constants";
 
-export async function fetchMemoriesStub(filters?: { tags?: string[]; userId?: string; date?: string }) {
+export async function fetchMemoriesStub(filters) {
   await new Promise((r) => setTimeout(r, 300));
   const base = generateSampleMemories(12, 1);
   return base.filter((m) => {
@@ -12,22 +12,22 @@ export async function fetchMemoriesStub(filters?: { tags?: string[]; userId?: st
   });
 }
 
-export async function uploadMemoryStub(payload: FormData) {
+export async function uploadMemoryStub(payload) {
   await new Promise((r) => setTimeout(r, 400));
   return {
     id: uid("uploaded"),
-    s3Url: URL.createObjectURL(payload.get("file") as File),
-    thumbnailUrl: URL.createObjectURL(payload.get("file") as File),
+    s3Url: URL.createObjectURL(payload.get("file")),
+    thumbnailUrl: URL.createObjectURL(payload.get("file")),
     userId: "you",
-    tags: (payload.get("tags") as string)?.split(",").map((s) => s.trim()) || [],
-    caption: (payload.get("caption") as string) || "",
+    tags: payload.get("tags")?.split(",").map((s) => s.trim()) || [],
+    caption: payload.get("caption") || "",
     createdAt: new Date().toISOString(),
     orientation: "vertical"
-  } as Memory;
+  };
 }
 
-export function generateSampleMemories(n = 6, startSeed = 1): Memory[] {
-  const mems: Memory[] = [];
+export function generateSampleMemories(n = 6, startSeed = 1) {
+  const mems = [];
   for (let i = 0; i < n; i++) {
     const seed = startSeed + i;
     const vertical = Math.random() > 0.6;

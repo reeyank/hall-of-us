@@ -1,9 +1,9 @@
 "use client";
 import React, { useState } from "react";
 
-export default function ChatPopup({ open, onClose, memoryPreview }: { open: boolean; onClose: () => void; memoryPreview?: string }) {
+export default function ChatPopup({ open, onClose, memoryPreview }) {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<{ from: "user" | "assistant"; text: string }[]>([]);
+  const [messages, setMessages] = useState([]);
 
   const send = async () => {
     if (!input.trim()) return;
