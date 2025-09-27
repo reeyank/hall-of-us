@@ -17,6 +17,7 @@ export default function Page() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatPreview, setChatPreview] = useState(undefined);
   const [processing, setProcessing] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -30,7 +31,10 @@ export default function Page() {
   const allTags = useMemo(() => Array.from(new Set(memories.flatMap((m) => m.tags))), [memories]);
   const allUsers = useMemo(() => Array.from(new Set(memories.map((m) => m.userId))), [memories]);
 
-  const handleApplyFilters = (f) => setFilters(f);
+  const handleApplyFilters = (f) => {
+    setFilters(f);
+    setFiltersOpen(false);
+  };
   const handleUploadCreated = (m) => setMemories((prev) => [m, ...prev]);
   const handleOpenEnhance = (preview) => { setChatPreview(preview); setChatOpen(true); };
   const handleProcess = async (memoryId) => {
@@ -65,19 +69,26 @@ export default function Page() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Filters with glassmorphism */}
-        <div className="mb-6">
-          <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-4">
-            <FiltersBar
-              tagsList={allTags}
-              users={allUsers}
-              onApply={handleApplyFilters}
-            />
-          </div>
+        {/* Filter Button */}
+        <div className="mb-6 flex justify-between items-center">
+          <button
+            onClick={() => setFiltersOpen(true)}
+            className="bg-white/10 backdrop-blur-md border border-white/30 text-white font-medium py-3 px-6 rounded-lg hover:bg-white/20 transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707v6.586a1 1 0 01-1.414.914l-4-2A1 1 0 018 18.586v-4.586a1 1 0 00-.293-.707L1.293 7.293A1 1 0 011 6.586V4z" />
+            </svg>
+            Filters
+            {(filters.tags?.length || filters.userId || filters.date) && (
+              <span className="ml-1 bg-blue-500 text-xs rounded-full px-2 py-0.5">
+                {(filters.tags?.length || 0) + (filters.userId ? 1 : 0) + (filters.date ? 1 : 0)}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Feed Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6 w-full overflow-hidden">
           {loading ? (
             <div className="col-span-full">
               <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-12 text-center">
@@ -145,6 +156,31 @@ export default function Page() {
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               <span>Processing your memory...</span>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filters Overlay */}
+      {filtersOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center pt-20 px-4">
+          <div className="bg-white/95 backdrop-blur-md rounded-xl border border-white/20 p-6 w-full max-w-md mx-4 animate-in slide-in-from-top duration-300">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Filters</h3>
+              <button
+                onClick={() => setFiltersOpen(false)}
+                className="text-gray-500 hover:text-gray-700 p-1"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <FiltersBar
+              tagsList={allTags}
+              users={allUsers}
+              onApply={handleApplyFilters}
+              isOverlay={true}
+            />
           </div>
         </div>
       )}
