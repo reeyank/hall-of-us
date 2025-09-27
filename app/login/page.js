@@ -171,7 +171,7 @@ export default function LoginPage() {
 
         {/* Back to Home */}
         <div className="mt-4 text-center">
-          <Link href="/" className="text-sm text-gray-600 hover:text-gray-800">
+          <Link href="/" className="text-sm text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors">
             ← Back to Home
           </Link>
         </div>

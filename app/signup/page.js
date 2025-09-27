@@ -142,6 +142,13 @@ export default function SignupPage() {
             </Link>
           </p>
         </div>
+
+        {/* Back to Home */}
+        <div className="mt-4 text-center">
+          <Link href="/" className="text-sm text-gray-300 hover:text-white transition-colors">
+            ← Back to Home
+          </Link>
+        </div>
       </div>
     </div>
   );
