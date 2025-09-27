@@ -1,109 +1,243 @@
 "use client";
+
 import React, { useState, useEffect, useMemo } from "react";
-import { fetchMemoriesStub } from "../api";
-import { PAGE_SIZE, DEFAULT_FEED_BG, PROCESSING_COLOR } from "./constants";
-import { useAuth } from "../components/AuthProvider";
-import { useRouter } from 'next/navigation';
+import { fetchMemoriesStub } from '../api';
 
-import FiltersBar from "../components/filters/FiltersBar";
-import MemoryCard from "../components/memory/MemoryCard";
-import UploadModal from "../components/upload/UploadModal";
-import ChatPopup from "../components/chat/ChatPopup";
+const PAGE_SIZE = 10;
 
-export default function Page() {
+// Transform API photos to match expected memory structure
+const transformPhotoToMemory = (photo) => ({
+  id: photo.id,
+  url: photo.url,
+  filename: photo.filename,
+  tags: photo.tags ? photo.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
+  user_id: photo.user_id || 'anonymous',
+  userId: photo.user_id || 'anonymous',
+  likes: photo.likes || 0,
+  processed: false,
+  createdAt: photo.exif_gps_info?.["29"] || new Date().toISOString(),
+  exif_gps_info: photo.exif_gps_info
+});
+
+// FiltersBar Component
+const FiltersBar = ({ tagsList, users, onApply, isOverlay }) => {
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [selectedUser, setSelectedUser] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+
+  const handleApply = () => {
+    onApply({
+      tags: selectedTags,
+      userId: selectedUser,
+      date: selectedDate
+    });
+  };
+
+  const handleReset = () => {
+    setSelectedTags([]);
+    setSelectedUser('');
+    setSelectedDate('');
+    onApply({});
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Tags Filter */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+        <div className="flex flex-wrap gap-2">
+          {tagsList.map(tag => (
+            <button
+              key={tag}
+              onClick={() => {
+                setSelectedTags(prev => 
+                  prev.includes(tag) 
+                    ? prev.filter(t => t !== tag)
+                    : [...prev, tag]
+                );
+              }}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                selectedTags.includes(tag)
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* User Filter */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">User</label>
+        <select 
+          value={selectedUser} 
+          onChange={(e) => setSelectedUser(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="">All Users</option>
+          {users.map(user => (
+            <option key={user} value={user}>{user}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Date Filter */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex gap-2 pt-4">
+        <button
+          onClick={handleApply}
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+        >
+          Apply Filters
+        </button>
+        <button
+          onClick={handleReset}
+          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
+        >
+          Reset
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// MemoryCard Component
+const MemoryCard = ({ memory, onProcess }) => {
+  const [liked, setLiked] = useState(false);
+  
+  return (
+    <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 overflow-hidden hover:bg-white/15 transition-all duration-200">
+      <div className="aspect-square relative">
+        <img 
+          src={memory.url} 
+          alt={memory.filename}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.src = 'https://via.placeholder.com/400x400?text=Image+Not+Found';
+          }}
+        />
+        {memory.processed && (
+          <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+            Enhanced
+          </div>
+        )}
+      </div>
+      
+      <div className="p-4">
+        <div className="flex flex-wrap gap-1 mb-3">
+          {memory.tags.map(tag => (
+            <span key={tag} className="bg-white/20 text-white px-2 py-1 rounded-full text-xs">
+              {tag}
+            </span>
+          ))}
+        </div>
+        
+        <div className="flex items-center justify-between text-white text-sm">
+          <span>@{memory.user_id}</span>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setLiked(!liked)}
+              className={`flex items-center gap-1 ${liked ? 'text-red-400' : 'text-white/70'} hover:text-red-400 transition-colors`}
+            >
+              <span>♥</span>
+              <span>{memory.likes + (liked ? 1 : 0)}</span>
+            </button>
+            
+            {!memory.processed && (
+              <button
+                onClick={() => onProcess(memory.id)}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors"
+              >
+                Enhance
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Main Feed Component
+export default function FeedPage() {
+  const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({});
   const [uploadOpen, setUploadOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [chatPreview, setChatPreview] = useState(undefined);
   const [processing, setProcessing] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [allMemories, setAllMemories] = useState([]);
   const [memories, setMemories] = useState([]);
+
   useEffect(() => {
-    const fetchMemories = async () => {
+    const getAllMemories = async () => {
       setLoading(true);
       try {
-        const results = await fetchMemoriesStub({});
-        setAllMemories(results);               // master list
-        setMemories(results.slice(0, pageSize)); // initial paginated list
+        const results = await fetchMemoriesStub(filters);
+        const transformedResults = results.photos.map(transformPhotoToMemory);
+        setAllMemories(transformedResults);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMemories();
-  }, []);
-
-
-  const { logout } = useAuth();
-  const router = useRouter();
-
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
-  };
+    getAllMemories();
+  }, [filters]);
 
   const allTags = useMemo(
     () => Array.from(new Set(allMemories.flatMap((m) => m.tags))),
     [allMemories]
   );
+  
   const allUsers = useMemo(
-    () => Array.from(new Set(allMemories.map((m) => m.userId))),
+    () => Array.from(new Set(allMemories.map((m) => m.user_id))),
     [allMemories]
   );
 
   useEffect(() => {
-    setLoading(true);
-
-    const filtered = allMemories.filter((m) => {
-      if (filters.tags && filters.tags.length > 0) {
-        if (!filters.tags.every((tag) => m.tags.includes(tag))) return false;
-      }
-
-      if (filters.userId && m.userId !== filters.userId) return false;
-
-      if (filters.date) {
-        const memDate = new Date(m.createdAt);
-        if (isNaN(memDate.getTime())) return false;
-
-        // normalize memDate to YYYY-MM-DD
-        const memDateStr = memDate.toISOString().split("T")[0];
-
-        // normalize user input date to YYYY-MM-DD
-        let filterDate = filters.date;
-        if (filterDate.includes("/")) {
-          const [month, day, year] = filterDate.split("/");
-          filterDate = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-        }
-
-        if (memDateStr !== filterDate) return false;
-      }
-
-      return true;
-    });
-
-    setMemories(filtered.slice(0, pageSize));
-    setLoading(false);
-  }, [filters, pageSize, allMemories]);
+    const startIndex = 0;
+    const endIndex = page * pageSize;
+    setMemories(allMemories.slice(startIndex, endIndex));
+  }, [page, pageSize, allMemories]);
 
   const handleApplyFilters = (f) => {
     setFilters(f);
+    setPage(1); // Reset to first page on new filters
     setFiltersOpen(false);
   };
-  const handleUploadCreated = (m) => setMemories((prev) => [m, ...prev]);
-  const handleOpenEnhance = (preview) => { setChatPreview(preview); setChatOpen(true); };
+
   const handleProcess = async (memoryId) => {
     setProcessing(true);
     await new Promise((r) => setTimeout(r, 1800));
     setMemories((prev) =>
-        prev.map((m) =>
+      prev.map((m) =>
         m.id === memoryId
-        ? { ...m, processed: true, tags: Array.from(new Set([...m.tags, "enhanced"])) }
-        : m
-    ));
+          ? { ...m, processed: true, tags: Array.from(new Set([...m.tags, "enhanced"])) }
+          : m
+      )
+    );
+    setAllMemories((prev) =>
+      prev.map((m) =>
+        m.id === memoryId
+          ? { ...m, processed: true, tags: Array.from(new Set([...m.tags, "enhanced"])) }
+          : m
+      )
+    );
     setProcessing(false);
   };
 
@@ -121,10 +255,7 @@ export default function Page() {
                 Discover and share your memories
               </p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="bg-white/10 backdrop-blur-md border border-white/30 text-white font-medium py-2 px-4 rounded-lg hover:bg-white/20 transition-all duration-200"
-            >
+            <button className="bg-white/10 backdrop-blur-md border border-white/30 text-white font-medium py-2 px-4 rounded-lg hover:bg-white/20 transition-all duration-200">
               Logout
             </button>
           </div>
@@ -178,18 +309,18 @@ export default function Page() {
           ) : (
             memories.map((m) => (
               <div key={m.id} className="transform transition-all duration-200 hover:scale-105">
-                  <MemoryCard memory={m} onProcess={handleProcess} />
+                <MemoryCard memory={m} onProcess={handleProcess} />
               </div>
             ))
           )}
         </section>
 
         {/* Load More Button */}
-        {memories.length > 0 && (
+        {memories.length > 0 && memories.length >= pageSize && (
           <div className="mt-8 text-center">
             <button
               className="bg-white/10 backdrop-blur-md border border-white/30 text-white font-medium py-3 px-8 rounded-lg hover:bg-white/20 transition-all duration-200 transform hover:scale-105"
-              onClick={() => setPageSize((s) => s + PAGE_SIZE)}
+              onClick={() => setPage((prevPage) => prevPage + 1)}
             >
               Load More Memories
             </button>
@@ -197,7 +328,7 @@ export default function Page() {
         )}
       </main>
 
-      {/* Floating Action Buttons with glassmorphism */}
+      {/* Floating Action Buttons */}
       <button
         className="fixed left-4 bottom-4 z-40 bg-white/20 backdrop-blur-md border border-white/30 rounded-full w-14 h-14 shadow-2xl flex items-center justify-center text-white text-2xl hover:bg-white/30 transition-all duration-200 transform hover:scale-110"
         onClick={() => setUploadOpen(true)}
@@ -206,13 +337,10 @@ export default function Page() {
       </button>
 
       <button
-      className="fixed right-4 bottom-4 z-40 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full w-14 h-14 shadow-2xl flex items-center justify-center text-white text-xl transition-all duration-200 transform hover:scale-110"
-      onClick={() => { 
-        setChatPreview(undefined);
-        setChatOpen(true); 
-      }}
+        className="fixed right-4 bottom-4 z-40 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full w-14 h-14 shadow-2xl flex items-center justify-center text-white text-xl transition-all duration-200 transform hover:scale-110"
+        onClick={() => setChatOpen(true)}
       >
-      💬
+        💬
       </button>
 
       {/* Processing Notification */}
@@ -251,19 +379,6 @@ export default function Page() {
           </div>
         </div>
       )}
-
-      {/* Modals */}
-      <UploadModal
-        open={uploadOpen}
-        onClose={() => setUploadOpen(false)}
-        onUpload={handleUploadCreated}
-        onOpenEnhance={handleOpenEnhance}
-      />
-      <ChatPopup
-        open={chatOpen}
-        onClose={() => setChatOpen(false)}
-        memoryPreview={chatPreview}
-      />
     </div>
   );
 }

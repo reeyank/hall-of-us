@@ -2,14 +2,24 @@ import { uid } from "./feed/types";
 import { TAGS_POOL, USERS } from "./feed/constants";
 
 export async function fetchMemoriesStub(filters) {
-  await new Promise((r) => setTimeout(r, 300));
-  const base = generateSampleMemories(12, 1);
-  return base.filter((m) => {
-    if (filters?.tags && filters.tags.length && !filters.tags.some((t) => m.tags.includes(t))) return false;
-    if (filters?.userId && m.userId !== filters.userId) return false;
-    if (filters?.date && new Date(m.createdAt).toISOString().slice(0, 10) !== filters.date) return false;
-    return true;
+  const url = new URL('https://api.doubleehbatteries.com/photos');
+  // Add filter parameters if they exist
+  if (filters.tags && filters.tags.length > 0) {
+    url.searchParams.append('tags', filters.tags.join(','));
+  }
+  if (filters.userId) {
+    url.searchParams.append('user_id', filters.userId);
+  }
+  if (filters.date) {
+    url.searchParams.append('date', filters.date);
+  }
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
   });
+  return response.json();
 }
 
 export async function uploadMemoryStub(payload) {
