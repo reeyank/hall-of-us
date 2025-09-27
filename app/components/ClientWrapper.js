@@ -1,11 +1,14 @@
 "use client";
 
 import { AuthProvider } from './AuthProvider';
+import CedarProvider from './CedarProvider';
 
 export default function ClientWrapper({ children }) {
   return (
     <AuthProvider>
-      {children}
+      <CedarProvider>
+        {children}
+      </CedarProvider>
     </AuthProvider>
   );
 }
