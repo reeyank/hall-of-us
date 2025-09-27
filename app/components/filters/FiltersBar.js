@@ -11,7 +11,7 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
     : "bg-white p-3 rounded shadow-sm mb-4 flex items-center gap-3";
 
   const inputClasses = isOverlay
-    ? "w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+    ? "w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
     : "border px-2 py-1 rounded";
 
   const buttonClasses = isOverlay
