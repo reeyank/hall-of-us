@@ -59,7 +59,7 @@ export default function SignupPage() {
       // Auto-login after successful signup
       setTimeout(() => {
         login({ username });
-        router.push('/');
+        router.push('/feed');
       }, 1500);
 
     } catch (error) {
