@@ -33,7 +33,8 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
   // Function to fetch API key from the endpoint
   const fetchApiKey = async () => {
     try {
-      const response = await fetch('http://localhost:8000/langchain/get_key');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${apiUrl}langchain/get_key`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch API key: ${response.status}`);
