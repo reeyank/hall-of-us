@@ -13,32 +13,32 @@ import TouchEnabledWrapper from '../touch/TouchEnabledWrapper'
 function MyComponent() {
 	const menuItems = [
 		{
-			title: 'Copy',
+			title: 'Generate Tags',
 			icon: Download,
 			onInvoke: (store) => {
 				// Access Cedar store for actions
-				console.log('Copy action');
+				console.log('Generate Tags');
 			},
 		},
 		{
-			title: 'Edit',
+			title: 'Fill in Remaining Tags',
 			icon: Heart,
 			onInvoke: (store) => {
-				console.log('Edit action');
+				console.log('Fill in Remaining Tags');
 			},
 		},
 		{
-			title: 'Share',
+			title: 'Generate Caption',
 			icon: Share,
 			onInvoke: (store) => {
-				console.log('Share action');
+				console.log('Generate Caption');
 			},
 		},
 		{
-			title: 'Delete',
+			title: 'Fill in Remaining Caption',
 			icon: Trash,
 			onInvoke: (store) => {
-				console.log('Delete action');
+				console.log('Fill in Remaining Caption');
 			},
 		},
 	];
