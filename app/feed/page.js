@@ -88,6 +88,17 @@ export default function Page() {
     fetchMemories();
   }, []);
 
+  // Hide the floating Cedar chat while the upload modal is open.
+  useEffect(() => {
+    if (uploadOpen) {
+      try {
+        setShowChat(false);
+      } catch (e) {
+        // ignore if cedar store isn't available
+      }
+    }
+  }, [uploadOpen, setShowChat]);
+
 
   const { logout } = useAuth();
   const router = useRouter();
@@ -327,7 +338,7 @@ export default function Page() {
         onUpload={handleUploadCreated}
         onOpenEnhance={handleOpenEnhance}
       />
-      <FloatingCedarChat/>
+      {!uploadOpen && <FloatingCedarChat />}
     </div>
   );
 }
