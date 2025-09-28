@@ -54,7 +54,7 @@ const RadialMenuSpell: React.FC<RadialMenuSpellProps> = ({
 		y: number;
 	} | null>(null);
 	const isCancelActive = hoverIndex === null;
-	const centerLabel = isCancelActive ? 'Cancel' : items[hoverIndex!].title;
+	const centerLabel = isCancelActive ? 'Cancel' : 'Apply';
 
 	// Use a ref to track the hover index when deactivating
 	const hoverIndexRef = useRef<number | null>(null);
@@ -63,7 +63,7 @@ const RadialMenuSpell: React.FC<RadialMenuSpellProps> = ({
 	}, [hoverIndex]);
 
 	// Use the new simplified useSpell hook
-	useSpell({
+	const { deactivate } = useSpell({
 		id: spellId,
 		activationConditions,
 		onActivate: (state) => {
@@ -197,6 +197,22 @@ const RadialMenuSpell: React.FC<RadialMenuSpellProps> = ({
 			setMenuPosition(null);
 		};
 
+		const handleTouchStart = (e: TouchEvent) => {
+			const touch = e.touches[0];
+			if (!touch) return;
+
+			const dx = touch.clientX - menuPosition.x;
+			const dy = touch.clientY - menuPosition.y;
+			const distance = Math.sqrt(dx * dx + dy * dy);
+			const menuRadius = MENU_RADIUS + OUTER_PADDING + BORDER_STROKE_WIDTH + 20; // Add some buffer
+
+			// If touch is outside the radial menu, close it
+			if (distance > menuRadius) {
+				e.preventDefault(); // Prevent any other touch handling
+				deactivate(); // Use the spell's deactivate function
+			}
+		};
+
 		const handleEscape = (e: KeyboardEvent) => {
 			if (e.key === 'Escape') {
 				// Clear selection and close without executing
@@ -207,14 +223,16 @@ const RadialMenuSpell: React.FC<RadialMenuSpellProps> = ({
 
 		window.addEventListener('mousemove', handleMouseMove);
 		window.addEventListener('click', handleClick);
+		window.addEventListener('touchstart', handleTouchStart, { passive: false });
 		window.addEventListener('keydown', handleEscape);
 
 		return () => {
 			window.removeEventListener('mousemove', handleMouseMove);
 			window.removeEventListener('click', handleClick);
+			window.removeEventListener('touchstart', handleTouchStart);
 			window.removeEventListener('keydown', handleEscape);
 		};
-	}, [menuPosition, items]);
+	}, [menuPosition, items, deactivate]);
 
 	// Don't render if menu is not active
 	if (!menuPosition) return null;
@@ -394,6 +412,14 @@ const RadialMenuSpell: React.FC<RadialMenuSpellProps> = ({
 									className: 'w-5 h-5',
 								})
 							)}
+
+							{/* Title below icon */}
+							<div
+								className='text-[11px] leading-none mt-1 text-center break-keep'
+								style={{ color: textColor, maxWidth: 64 }}
+							>
+								{item.title}
+							</div>
 						</div>
 					);
 				})}
