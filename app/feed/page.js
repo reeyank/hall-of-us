@@ -54,7 +54,7 @@ export default function Page() {
   });
 
   useSubscribeStateToAgentContext('allMemories', (allMemories) => ({ allMemories }), {
-    showInChat: true,
+    showInChat: false,
     color: '#4F46E5',
   });
 
@@ -192,7 +192,7 @@ export default function Page() {
       <header className="sticky top-0 z-50 bg-white/20 backdrop-blur-xl border-b border-white/40">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
+            <div className="flex-1 text-center sm:text-left">
               <h1 className="text-2xl sm:text-3xl font-bold text-white">
                 Hall of Us Feed
               </h1>
