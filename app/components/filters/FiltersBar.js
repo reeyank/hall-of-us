@@ -2,11 +2,67 @@
 import React, { useState } from "react";
 import {CedarCaptionChat} from "../../../src/cedar/components/chatComponents/CedarCaptionChat"
 import {EmbeddedCedarChat} from "../../../src/cedar/components/chatComponents/EmbeddedCedarChat"
+import { useCedarStore } from "cedar-os";
 
 export default function FiltersBar({ tagsList, users, onApply, isOverlay = false }) {
   const [tag, setTag] = useState("");
   const [userId, setUserId] = useState("");
   const [date, setDate] = useState("");
+  const [isFiltering, setIsFiltering] = useState(false);
+
+  // Get Cedar store state
+  const cedarState = useCedarStore((state) => state);
+
+  const handleFilterImages = async () => {
+    setIsFiltering(true);
+
+    try {
+      // Send POST request to backend with CedarState
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}langchain/chat/filter_images`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cedarState: {
+            messages: cedarState.messages,
+            currentThreadId: cedarState.currentThreadId,
+            activeFilters: { tag, userId, date },
+            // Include other relevant state data
+            threads: cedarState.threads,
+            threadMap: cedarState.threadMap,
+          },
+          // Provide the backend with all available filter options and raw lists
+          availableFilters: {
+            // tags and userIds use the lists passed into this component
+            tags: tagsList || [],
+            userIds: users || [],
+            // Date may be freeform; backend can interpret empty array as unrestricted
+            date: [],
+          },
+          // Convenience top-level arrays for explicit tag/user lists
+          allTags: tagsList || [],
+          allUserIds: users || [],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      // Apply the filters returned from the backend
+      if (result.filters) {
+        onApply(result.filters);
+      }
+
+    } catch (error) {
+      console.error('Error filtering images:', error);
+    } finally {
+      setIsFiltering(false);
+    }
+  };
 
   const containerClasses = isOverlay
     ? "space-y-4"
@@ -53,6 +109,13 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
               Apply Filters
             </button>
             <button
+              className={`${buttonClasses} bg-purple-600 hover:bg-purple-700 text-white flex-1 ${isFiltering ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={handleFilterImages}
+              disabled={isFiltering}
+            >
+              {isFiltering ? 'AI Filtering...' : 'AI Filter'}
+            </button>
+            <button
               className={`${buttonClasses} border border-gray-300 hover:bg-gray-50 text-gray-700 flex-1`}
               onClick={() => { setTag(""); setUserId(""); setDate(""); onApply({}); }}
             >
@@ -75,6 +138,9 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
           <input className={inputClasses} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
 
           <button className={`ml-auto bg-blue-600 text-white ${buttonClasses}`} onClick={() => onApply({ tags: tag ? [tag] : [], userId: userId || undefined, date: date || undefined })}>Apply</button>
+          <button className={`ml-2 bg-purple-600 text-white ${buttonClasses} ${isFiltering ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={handleFilterImages} disabled={isFiltering}>
+            {isFiltering ? 'AI Filtering...' : 'AI Filter'}
+          </button>
           <button className={`ml-2 border ${buttonClasses}`} onClick={() => { setTag(""); setUserId(""); setDate(""); onApply({}); }}>Clear</button>
         </>
       )}
