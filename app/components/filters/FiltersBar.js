@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {CedarCaptionChat} from "../../../src/cedar/components/chatComponents/CedarCaptionChat"
 import {EmbeddedCedarChat} from "../../../src/cedar/components/chatComponents/EmbeddedCedarChat"
 import { useCedarStore } from "cedar-os";
@@ -63,6 +63,108 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
       setIsFiltering(false);
     }
   };
+
+  // Helper: send a natural language filter text to the same backend endpoint
+  const handleFilterText = async (text, trigger = null) => {
+    if (!text || typeof text !== 'string') return;
+    setIsFiltering(true);
+
+    try {
+      // generate a short request id for correlation
+      const requestId = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}langchain/chat/filter_images`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          // correlation / session metadata useful for MCP servers
+          requestId,
+          clientSessionId: (cedarState && (cedarState.sessionId || cedarState.clientSessionId)) || localStorage.getItem('cedar_session') || null,
+          // explicit caller user id if available
+          userId: (cedarState && (cedarState.user || cedarState.userId)) || localStorage.getItem('user') || null,
+          // timestamp for the request
+          requestTimestamp: new Date().toISOString(),
+          cedarState: {
+            messages: cedarState.messages,
+            currentThreadId: cedarState.currentThreadId,
+            activeFilters: { tag, userId, date },
+            threads: cedarState.threads,
+            threadMap: cedarState.threadMap,
+          },
+          // editor text / input the user typed (if available on the cedar state)
+          editorContent: typeof cedarState.stringifyEditor === 'function' ? cedarState.stringifyEditor() : (cedarState.editorContent || null),
+          // compiled additional context (if the cedar API exposes a helper)
+          compiledAdditionalContext: typeof cedarState.compileAdditionalContext === 'function' ? cedarState.compileAdditionalContext() : (cedarState.additionalContext || null),
+          // registered states and agent connection logs help MCP servers understand the runtime
+          registeredStates: cedarState.registeredStates || null,
+          agentConnectionLogs: cedarState.agentConnectionLogs || null,
+          // Provide the backend with all available filter options and raw lists
+          availableFilters: {
+            tags: tagsList || [],
+            userIds: users || [],
+            orientation: ["horizontal", "vertical"],
+            processed: [true, false],
+            date: [],
+          },
+          allTags: tagsList || [],
+          allUserIds: users || [],
+          naturalLanguageFilter: text,
+          // Optional trigger metadata (e.g. came from a particular chat message or UI action)
+          trigger: trigger || null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.filters) {
+        onApply(result.filters);
+      }
+    } catch (error) {
+      console.error('Error filtering images with text:', error);
+    } finally {
+      setIsFiltering(false);
+    }
+  };
+
+  // Listen for new user messages from Cedar chat and treat qualifying messages as natural-language filters.
+  const lastSentMessageId = useRef(null);
+  useEffect(() => {
+    const messages = cedarState.messages || [];
+    if (!messages.length) return;
+    const last = messages[messages.length - 1];
+
+    // Only consider plain user text messages
+    if (!last || last.role !== 'user' || last.type !== 'text') return;
+
+    // Avoid re-sending the same message
+    if (last.id && last.id === lastSentMessageId.current) return;
+
+    const content = last.content || last.text || last.message || '';
+    if (!content || typeof content !== 'string') return;
+
+    // Heuristic: look for keywords that indicate filtering intent
+    const lc = content.toLowerCase();
+    const keywords = ['filter', 'show', 'only', 'images', 'photos', 'tag', 'user', 'from', 'after', 'before', 'date'];
+    const looksLikeFilter = keywords.some((k) => lc.includes(k));
+
+    if (looksLikeFilter) {
+      lastSentMessageId.current = last.id || `${Date.now()}`;
+      const trigger = {
+        messageId: last.id || null,
+        threadId: cedarState.currentThreadId || null,
+        source: 'cedar_chat',
+        contentSnippet: content.slice(0, 200),
+      };
+      handleFilterText(content, trigger);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cedarState.messages]);
 
   const containerClasses = isOverlay
     ? "space-y-4"
