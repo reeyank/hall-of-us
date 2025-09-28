@@ -126,6 +126,13 @@ This modular structure keeps the codebase clean, scalable, and hackathon-friendl
 
 Made with ❤️ at HackGT
 
+---
+
+### 🪢 Sister Repositories
+
+- [hall-of-us-backend (Backend API)](https://github.com/reeyank/hall-of-us-backend)
+- [Hall-Of-Us-XR (XR Experience)](https://github.com/zaid-ahmed1/Hall-Of-Us-XR/)
+
 The project is organized into the following key folders:
 
 ### `app/`
@@ -164,3 +171,7 @@ This folder contains the core application logic and components:
 - **`favicon.ico`**: The app's favicon.
 
 This structure ensures modularity and scalability, making it easier to maintain and extend the app.
+
+# Sister Repos
+
+## Backend repository
