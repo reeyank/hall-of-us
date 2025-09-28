@@ -240,40 +240,161 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
   };
 
   // Radial menu handlers: generate/fill tags and captions
-  const handleGenerateTags = () => {
-    // Pick up to 3 suggested tags that are not already selected
-    const suggestions = AVAILABLE_TAGS.filter(t => !selectedTags.includes(t)).slice(0, 3);
-    if (suggestions.length > 0) setSelectedTags(prev => [...prev, ...suggestions]);
-  };
+  const handleGenerateTags = async () => {
+    try {
+      const store = useCedarStore.getState();
 
-  const handleFillTags = () => {
-    // Fill tags up to 5 using filteredTags or AVAILABLE_TAGS
-    const maxTags = 5;
-    const needed = Math.max(0, maxTags - selectedTags.length);
-    if (needed <= 0) return;
-    const pool = filteredTags.length > 0 ? filteredTags : AVAILABLE_TAGS.filter(t => !selectedTags.includes(t));
-    const toAdd = pool.slice(0, needed);
-    if (toAdd.length > 0) setSelectedTags(prev => [...prev, ...toAdd]);
-  };
+      const response = await fetch('http://localhost:8000/chat/generate-tags', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image_url: preview,
+          current_tags: selectedTags,
+          cedar_state: {
+            additionalContext: store.additionalContext,
+            currentContext: store.currentContext,
+            chatHistory: store.chatHistory,
+          }
+        })
+      });
 
-  const handleGenerateCaption = () => {
-    // Build a simple caption from selected tags or filename
-    let captionText = '';
-    if (selectedTags.length > 0) {
-      captionText = `A memory about ${selectedTags.slice(0,3).join(', ')}`;
-    } else if (file && file.name) {
-      captionText = `A memory: ${file.name}`;
-    } else {
-      captionText = 'A special moment captured';
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tags && Array.isArray(data.tags)) {
+          setSelectedTags(prev => [...prev, ...data.tags.filter(tag => !prev.includes(tag))]);
+        }
+      }
+    } catch (error) {
+      console.error('Error generating tags:', error);
+      // Fallback to original behavior
+      const suggestions = AVAILABLE_TAGS.filter(t => !selectedTags.includes(t)).slice(0, 3);
+      if (suggestions.length > 0) setSelectedTags(prev => [...prev, ...suggestions]);
     }
-    setCaption(captionText);
   };
 
-  const handleFillCaption = () => {
-    if (!caption) {
-      handleGenerateCaption();
-    } else {
-      setCaption(prev => `${prev} — remembered fondly.`);
+  const handleFillTags = async () => {
+    try {
+      const store = useCedarStore.getState();
+      const maxTags = 5;
+      const needed = Math.max(0, maxTags - selectedTags.length);
+      if (needed <= 0) return;
+
+      const response = await fetch('http://localhost:8000/chat/fill-tags', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image_url: preview,
+          current_tags: selectedTags,
+          max_tags: maxTags,
+          needed_tags: needed,
+          cedar_state: {
+            additionalContext: store.additionalContext,
+            currentContext: store.currentContext,
+            chatHistory: store.chatHistory,
+          }
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tags && Array.isArray(data.tags)) {
+          setSelectedTags(prev => [...prev, ...data.tags.filter(tag => !prev.includes(tag))]);
+        }
+      }
+    } catch (error) {
+      console.error('Error filling tags:', error);
+      // Fallback to original behavior
+      const maxTags = 5;
+      const needed = Math.max(0, maxTags - selectedTags.length);
+      if (needed <= 0) return;
+      const pool = filteredTags.length > 0 ? filteredTags : AVAILABLE_TAGS.filter(t => !selectedTags.includes(t));
+      const toAdd = pool.slice(0, needed);
+      if (toAdd.length > 0) setSelectedTags(prev => [...prev, ...toAdd]);
+    }
+  };
+
+  const handleGenerateCaption = async () => {
+    try {
+      const store = useCedarStore.getState();
+
+      const response = await fetch('http://localhost:8000/chat/generate-caption', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image_url: preview,
+          tags: selectedTags,
+          filename: file?.name,
+          cedar_state: {
+            additionalContext: store.additionalContext,
+            currentContext: store.currentContext,
+            chatHistory: store.chatHistory,
+          }
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.caption) {
+          setCaption(data.caption);
+        }
+      }
+    } catch (error) {
+      console.error('Error generating caption:', error);
+      // Fallback to original behavior
+      let captionText = '';
+      if (selectedTags.length > 0) {
+        captionText = `A memory about ${selectedTags.slice(0,3).join(', ')}`;
+      } else if (file && file.name) {
+        captionText = `A memory: ${file.name}`;
+      } else {
+        captionText = 'A special moment captured';
+      }
+      setCaption(captionText);
+    }
+  };
+
+  const handleFillCaption = async () => {
+    try {
+      const store = useCedarStore.getState();
+
+      const response = await fetch('http://localhost:8000/chat/fill-caption', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image_url: preview,
+          current_caption: caption,
+          tags: selectedTags,
+          filename: file?.name,
+          cedar_state: {
+            additionalContext: store.additionalContext,
+            currentContext: store.currentContext,
+            chatHistory: store.chatHistory,
+          }
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.caption) {
+          setCaption(data.caption);
+        }
+      }
+    } catch (error) {
+      console.error('Error filling caption:', error);
+      // Fallback to original behavior
+      if (!caption) {
+        await handleGenerateCaption();
+      } else {
+        setCaption(prev => `${prev} — remembered fondly.`);
+      }
     }
   };
 
