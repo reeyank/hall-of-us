@@ -197,9 +197,11 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
       }
     }
     setFile(selectedFile);
+    const form = new FormData();
+    form.append("file", selectedFile);
     const response = await fetch('https://api.doubleehbatteries.com/upload-image-to-r2', {
       method: 'POST',
-      body: {file: selectedFile},
+      body: form,
     })
     const data = await response.json();
     setImageUrl(data.url);
