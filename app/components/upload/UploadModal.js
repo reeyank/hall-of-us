@@ -59,7 +59,7 @@ function MyComponent({ onGenerateTags, onFillTags, onGenerateCaption, onFillCapt
 			spellId='my-radial-menu'
 			items={menuItems}
 			activationConditions={{
-				events: [MouseEvent.RIGHT_CLICK],
+				events: [MouseEvent.DOUBLE_CLICK],
 				mode: ActivationMode.TOGGLE,
 			}}
 		/>
