@@ -251,7 +251,7 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
     try {
       const store = useCedarStore.getState();
 
-      const response = await fetch('http://localhost:8000/langchain/chat/generate-tags', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}langchain/chat/generate-tags`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -288,7 +288,7 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
       const needed = Math.max(0, maxTags - selectedTags.length);
       if (needed <= 0) return;
 
-      const response = await fetch('http://localhost:8000/langchain/chat/fill-tags', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}langchain/chat/fill-tags`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -328,7 +328,7 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
     try {
       const store = useCedarStore.getState();
 
-      const response = await fetch('http://localhost:8000/langchain/chat/generate-caption', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}langchain/chat/generate-caption`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -370,7 +370,7 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
     try {
       const store = useCedarStore.getState();
 
-      const response = await fetch('http://localhost:8000/langchain/chat/fill-caption', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}langchain/chat/fill-caption`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

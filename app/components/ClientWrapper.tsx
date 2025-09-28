@@ -35,7 +35,7 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
         console.log("callLLM: LangChainProvider called with params:", params);
 
         const response = await fetch(
-          `http://localhost:8000/langchain/completions`,
+          `${process.env.NEXT_PUBLIC_API_URL}langchain/completions`,
           {
             method: "POST",
             headers: {
@@ -104,7 +104,7 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
         }
 
         const response = await fetch(
-          "http://localhost:8000/langchain/completions",
+          `${process.env.NEXT_PUBLIC_API_URL}langchain/completions`,
           {
             method: "POST",
             headers: {
@@ -140,7 +140,7 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
               params;
 
             const response = await fetch(
-              "http://localhost:8000/langchain/completions",
+              `${process.env.NEXT_PUBLIC_API_URL}langchain/completions`,
               {
                 method: "POST",
                 headers: {
