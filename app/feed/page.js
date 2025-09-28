@@ -4,12 +4,15 @@ import { fetchMemoriesStub } from "../api";
 import { PAGE_SIZE, DEFAULT_FEED_BG, PROCESSING_COLOR } from "./constants";
 import { useAuth } from "../components/AuthProvider";
 import { useRouter } from 'next/navigation';
-
+import { useRegisterFrontendTool } from 'cedar-os';
+import { useSubscribeStateToAgentContext } from 'cedar-os';
 import FiltersBar from "../components/filters/FiltersBar";
 import MemoryCard from "../components/memory/MemoryCard";
 import UploadModal from "../components/upload/UploadModal";
 import { FloatingCedarChat } from "../../src/cedar/components/chatComponents/FloatingCedarChat";
 import { useCedarStore } from 'cedar-os';
+import { useRegisterState } from 'cedar-os';
+import { z } from 'zod';
 
 export default function Page() {
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
@@ -25,6 +28,47 @@ export default function Page() {
 
   const [allMemories, setAllMemories] = useState([]);
   const [memories, setMemories] = useState([]);
+
+  useRegisterState({
+    key: 'allMemories',
+    description: 'The memories that can be removed by Cedar',
+    value: allMemories,
+    setValue: setAllMemories,
+    stateSetters: {
+      removeMemory: {
+        name: 'removeMemory',
+        description: 'Remove a memory from the feed',
+        argsSchema: z.object({
+          memoryId: z.string().min(1, 'Memory ID cannot be empty').describe('The ID of the memory to remove'),
+        }),
+        execute: (
+          allMemories,
+          setValue,
+          args,
+        ) => {
+          setValue(allMemories.filter(m => m.id !== args.memoryId));
+          setAllMemories(allMemories.filter(m => m.id !== args.memoryId));
+        },
+      },
+    },
+  });
+
+  useSubscribeStateToAgentContext('allMemories', (allMemories) => ({ allMemories }), {
+    showInChat: true,
+    color: '#4F46E5',
+  });
+
+  useRegisterFrontendTool({
+    name: 'removeMemory',
+    description: 'Add a new line of text to the screen via frontend tool',
+    argsSchema: z.object({
+      memoryId: z.string().min(1, 'Memory ID cannot be empty').describe('The ID of the memory to remove'),
+    }),
+    execute: async (args) => {
+      setAllMemories(allMemories.filter(m => m.id !== args.memoryId));
+    },
+  });
+
   useEffect(() => {
     (async () => {
       const results = await fetchMemoriesStub({});

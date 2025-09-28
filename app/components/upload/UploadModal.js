@@ -79,6 +79,7 @@ const AVAILABLE_TAGS = [
 export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) {
   const [step, setStep] = useState(1); // 1: upload, 2: add tags/caption, 3: uploading
   const [file, setFile] = useState(null);
+  const [imageUrl, setImageUrl] = useState(null);
   const [preview, setPreview] = useState(null);
   const [selectedTags, setSelectedTags] = useState([]);
   const [currentTag, setCurrentTag] = useState("");
@@ -187,7 +188,7 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [open, step, showSuggestions, onClose]);
 
-  const handleFileSelect = (selectedFile) => {
+  const handleFileSelect = async (selectedFile) => {
     if (selectedFile) {
       const fileType = selectedFile.type;
       if (fileType !== 'image/png' && fileType !== 'image/jpeg') {
@@ -196,6 +197,12 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
       }
     }
     setFile(selectedFile);
+    const response = await fetch('https://api.doubleehbatteries.com/upload-image-to-r2', {
+      method: 'POST',
+      body: {file: selectedFile},
+    })
+    const data = await response.json();
+    setImageUrl(data.url);
     if (selectedFile) {
       setStep(2); // Move to tags/caption step
     }

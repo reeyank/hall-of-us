@@ -247,8 +247,14 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
   };
 
   return (
-    <CedarCopilot llmProvider={LangChainProvider}>
+    // <CedarCopilot llmProvider={LangChainProvider}>
+    <CedarCopilot
+    llmProvider={{
+      provider: 'openai',
+      apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
+    }}>
       <AuthProvider>{children}</AuthProvider>
     </CedarCopilot>
+    // </CedarCopilot>
   );
 }
