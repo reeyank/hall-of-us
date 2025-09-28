@@ -10,36 +10,36 @@ import { MouseEvent, ActivationMode } from 'cedar-os';
 import TouchEnabledWrapper from '../touch/TouchEnabledWrapper'
 
 
-function MyComponent() {
-	const menuItems = [
+
+function MyComponent({ onGenerateTags, onFillTags, onGenerateCaption, onFillCaption }) {
+  const menuItems = [
 		{
 			title: 'Generate Tags',
 			icon: Download,
-			onInvoke: (store) => {
-				// Access Cedar store for actions
-				console.log('Generate Tags');
-			},
+      onInvoke: (store) => {
+        if (typeof onGenerateTags === 'function') onGenerateTags();
+      },
 		},
 		{
 			title: 'Fill in Remaining Tags',
 			icon: Heart,
-			onInvoke: (store) => {
-				console.log('Fill in Remaining Tags');
-			},
+      onInvoke: (store) => {
+        if (typeof onFillTags === 'function') onFillTags();
+      },
 		},
 		{
 			title: 'Generate Caption',
 			icon: Share,
-			onInvoke: (store) => {
-				console.log('Generate Caption');
-			},
+      onInvoke: (store) => {
+        if (typeof onGenerateCaption === 'function') onGenerateCaption();
+      },
 		},
 		{
 			title: 'Fill in Remaining Caption',
 			icon: Trash,
-			onInvoke: (store) => {
-				console.log('Fill in Remaining Caption');
-			},
+      onInvoke: (store) => {
+        if (typeof onFillCaption === 'function') onFillCaption();
+      },
 		},
 	];
 
@@ -236,6 +236,44 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
     } else if (e.key === 'Backspace' && value === "" && selectedTags.length > 0) {
       // Remove last tag if backspace on empty input
       setSelectedTags(selectedTags.slice(0, -1));
+    }
+  };
+
+  // Radial menu handlers: generate/fill tags and captions
+  const handleGenerateTags = () => {
+    // Pick up to 3 suggested tags that are not already selected
+    const suggestions = AVAILABLE_TAGS.filter(t => !selectedTags.includes(t)).slice(0, 3);
+    if (suggestions.length > 0) setSelectedTags(prev => [...prev, ...suggestions]);
+  };
+
+  const handleFillTags = () => {
+    // Fill tags up to 5 using filteredTags or AVAILABLE_TAGS
+    const maxTags = 5;
+    const needed = Math.max(0, maxTags - selectedTags.length);
+    if (needed <= 0) return;
+    const pool = filteredTags.length > 0 ? filteredTags : AVAILABLE_TAGS.filter(t => !selectedTags.includes(t));
+    const toAdd = pool.slice(0, needed);
+    if (toAdd.length > 0) setSelectedTags(prev => [...prev, ...toAdd]);
+  };
+
+  const handleGenerateCaption = () => {
+    // Build a simple caption from selected tags or filename
+    let captionText = '';
+    if (selectedTags.length > 0) {
+      captionText = `A memory about ${selectedTags.slice(0,3).join(', ')}`;
+    } else if (file && file.name) {
+      captionText = `A memory: ${file.name}`;
+    } else {
+      captionText = 'A special moment captured';
+    }
+    setCaption(captionText);
+  };
+
+  const handleFillCaption = () => {
+    if (!caption) {
+      handleGenerateCaption();
+    } else {
+      setCaption(prev => `${prev} — remembered fondly.`);
     }
   };
 
@@ -491,7 +529,12 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
         </div>
 
         {/* Radial Menu for contextual actions */}
-        <MyComponent />
+        <MyComponent
+          onGenerateTags={handleGenerateTags}
+          onFillTags={handleFillTags}
+          onGenerateCaption={handleGenerateCaption}
+          onFillCaption={handleFillCaption}
+        />
 
 
         {/* Success Toast */}
