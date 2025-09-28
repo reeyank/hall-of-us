@@ -247,6 +247,40 @@ export const ChatInput: React.FC<{
 						<Code className='w-4 h-4' />
 					</button>
 				</div>
+				{/* Use-as-filter button: dispatches a global event consumed by FiltersBar */}
+				<button
+					className='p-1 text-gray-600 dark:text-gray-200 hover:text-black dark:hover:text-white cursor-pointer mr-2 text-xs'
+					title='Use current input as natural-language filter'
+					onClick={() => {
+						try {
+							const store = useCedarStore.getState();
+							let text = '';
+							if (typeof store.stringifyEditor === 'function') {
+								text = store.stringifyEditor();
+							} else if (editor) {
+								try {
+									// Best-effort: attempt to read text safely
+									// @ts-ignore
+									text = (editor.getText && editor.getText()) || (editor.getHTML && editor.getHTML()) || '';
+								} catch (ex) {
+									text = '';
+								}
+							}
+							const threadId = typeof store.getCurrentThreadId === 'function' ? store.getCurrentThreadId() : null;
+							const trigger = {
+								messageId: null,
+								threadId,
+								source: 'cedar_chat',
+								contentSnippet: (text || '').slice(0, 200),
+							};
+							window.dispatchEvent(new CustomEvent('naturalFilterRequest', { detail: { text, trigger } }));
+						} catch (e) {
+							console.error('Failed to dispatch naturalFilterRequest', e);
+						}
+					}}
+				>
+					Filter
+				</button>
 				<Container3DButton
 					id='send-chat'
 					motionProps={{

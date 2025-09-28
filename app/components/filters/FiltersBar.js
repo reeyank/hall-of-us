@@ -8,6 +8,7 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
   const [tag, setTag] = useState("");
   const [userId, setUserId] = useState("");
   const [date, setDate] = useState("");
+  const [nlText, setNlText] = useState("");
   const [isFiltering, setIsFiltering] = useState(false);
 
   // Get Cedar store state
@@ -17,6 +18,18 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
     setIsFiltering(true);
 
     try {
+      const payloadPreview = {
+        cedarState: {
+          messages: cedarState.messages?.length || 0,
+          currentThreadId: cedarState.currentThreadId || null,
+        },
+        activeFilters: { tag, userId, date },
+        availableFilters: {
+          tags: tagsList || [],
+          userIds: users || [],
+        }
+      };
+      console.log('handleFilterImages: sending payload preview', payloadPreview);
       // Send POST request to backend with CedarState
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}langchain/chat/filter_images`, {
         method: 'POST',
@@ -51,9 +64,11 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
       }
 
       const result = await response.json();
+      console.log('handleFilterImages: received response', result);
 
       // Apply the filters returned from the backend
       if (result.filters) {
+        console.log('handleFilterImages: applying filters', result.filters);
         onApply(result.filters);
       }
 
@@ -65,6 +80,48 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
   };
 
   // Helper: send a natural language filter text to the same backend endpoint
+  // Normalize filters returned from backend (support array of conditions)
+  const normalizeFilters = (filters) => {
+    if (!filters) return {};
+    // If already an object with tags/userId/date, return as-is
+    if (!Array.isArray(filters) && typeof filters === 'object') return filters;
+
+    const normalized = { tags: [], userId: undefined, date: undefined };
+
+    if (Array.isArray(filters)) {
+      filters.forEach((f) => {
+        try {
+          const field = (f.field || f.name || '').toString();
+          const operator = (f.operator || '').toString();
+          const value = f.value !== undefined ? f.value : f.val || f.v || null;
+
+          if (!field) return;
+
+          if (field.toLowerCase().includes('tag')) {
+            // support includes / equals
+            if (Array.isArray(value)) {
+              normalized.tags.push(...value.map(String));
+            } else if (typeof value === 'string') {
+              normalized.tags.push(value);
+            }
+          } else if (field.toLowerCase().includes('user')) {
+            normalized.userId = typeof value === 'string' ? value : String(value);
+          } else if (field.toLowerCase().includes('date') || field.toLowerCase().includes('created')) {
+            normalized.date = typeof value === 'string' ? value : String(value);
+          } else if (field === 'id' && operator === 'in') {
+            // not supported directly, leave for now
+          }
+        } catch (err) {
+          console.warn('normalizeFilters: failed to normalize filter entry', f, err);
+        }
+      });
+      // dedupe tags
+      normalized.tags = Array.from(new Set(normalized.tags));
+    }
+
+    return normalized;
+  };
+
   const handleFilterText = async (text, trigger = null) => {
     if (!text || typeof text !== 'string') return;
     setIsFiltering(true);
@@ -72,8 +129,9 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
     try {
       // generate a short request id for correlation
       const requestId = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+      console.log('Sending natural-language filter request:', { text, trigger, requestId });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}langchain/chat/filter_images`, {
+      const response = await fetch(`http://localhost:8000/langchain/chat/filter_images`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -121,15 +179,33 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
       }
 
       const result = await response.json();
+      console.log('handleFilterText: received response', result);
 
       if (result.filters) {
-        onApply(result.filters);
+        console.log('handleFilterText: raw filters from backend', result.filters);
+        const normalized = normalizeFilters(result.filters);
+        console.log('handleFilterText: normalized filters to apply', normalized);
+        onApply(normalized);
+        // update local UI selects where possible
+        if (normalized.tags && normalized.tags.length > 0) setTag(normalized.tags[0] || '');
+        if (normalized.userId) setUserId(normalized.userId);
+        if (normalized.date) setDate(normalized.date);
       }
     } catch (error) {
       console.error('Error filtering images with text:', error);
     } finally {
       setIsFiltering(false);
     }
+  };
+
+  // Submit handler for the visible natural-language text input
+  const handleNlSubmit = async (e) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    const text = (nlText || '').trim();
+    if (!text) return;
+    await handleFilterText(text, { source: 'filters_bar_text_input', messageId: null, threadId: cedarState.currentThreadId || null, contentSnippet: text.slice(0,200) });
+    // keep the text so the user can tweak; optionally clear
+    // setNlText('');
   };
 
   // Listen for new user messages from Cedar chat and treat qualifying messages as natural-language filters.
@@ -230,20 +306,42 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
           <div className="flex gap-3 mt-6">
             <button
               className={`${buttonClasses} bg-blue-600 hover:bg-blue-700 text-white flex-1`}
-              onClick={() => onApply({ tags: tag ? [tag] : [], userId: userId || undefined, date: date || undefined })}
+              onClick={() => {
+                const applied = { tags: tag ? [tag] : [], userId: userId || undefined, date: date || undefined };
+                console.log('Manual Apply Filters clicked, applying:', applied);
+                onApply(applied);
+              }}
             >
               Apply Filters
             </button>
             <button
               className={`${buttonClasses} border border-gray-300 hover:bg-gray-50 text-gray-700 flex-1`}
-              onClick={() => { setTag(""); setUserId(""); setDate(""); onApply({}); }}
+              onClick={() => { console.log('Clear All Filters clicked'); setTag(""); setUserId(""); setDate(""); onApply({}); }}
             >
               Clear All
             </button>
           </div>
           <div className="mt-3 text-sm text-gray-600">
-            Tip: You can also type natural-language filter requests in the embedded Cedar chat below (e.g. "show me images tagged beach from alice after 2024-01-01").
+            Tip: Type in what you want to filter below!
           </div>
+          <form onSubmit={handleNlSubmit} className="mt-3 flex gap-2">
+            <input
+              type="text"
+              placeholder="Or enter a natural-language filter..."
+              // make it dark
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+              value={nlText}
+              onChange={(e) => setNlText(e.target.value)}
+              disabled={isFiltering}
+            />
+            <button
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+              disabled={isFiltering || !nlText.trim()}
+            >
+              {isFiltering ? 'Filtering…' : 'Apply'}
+            </button>
+          </form>
         </>
       ) : (
         <>
@@ -264,6 +362,25 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
           <div className="ml-4 text-sm text-gray-600 hidden md:block">
             Tip: use the embedded chat below to send natural-language filter requests.
           </div>
+          <form onSubmit={handleNlSubmit} className="ml-4 hidden md:flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Natural-language filter..."
+              className={inputClasses + ' w-64'}
+              value={nlText}
+              onChange={(e) => setNlText(e.target.value)}
+              disabled={isFiltering}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleNlSubmit(); } }}
+            />
+            <button
+              type="button"
+              className={`ml-2 bg-blue-600 text-white ${buttonClasses}`}
+              onClick={handleNlSubmit}
+              disabled={isFiltering || !nlText.trim()}
+            >
+              {isFiltering ? 'Filtering…' : 'Apply'}
+            </button>
+          </form>
         </>
       )}
     </div>
