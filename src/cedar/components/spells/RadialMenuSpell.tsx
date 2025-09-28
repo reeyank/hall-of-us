@@ -415,7 +415,7 @@ const RadialMenuSpell: React.FC<RadialMenuSpellProps> = ({
 
 							{/* Title below icon */}
 							<div
-								className='text-[11px] leading-none mt-1 text-center break-keep'
+								className='text-[10px] leading-none mt-1 text-center break-keep'
 								style={{ color: textColor, maxWidth: 64 }}
 							>
 								{item.title}
