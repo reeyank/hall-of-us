@@ -21,7 +21,6 @@ export default function Page() {
   const [processing, setProcessing] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-
   const setShowChat = useCedarStore((state) => state.setShowChat);
 
   const [allMemories, setAllMemories] = useState([]);
@@ -41,10 +40,8 @@ export default function Page() {
         setLoading(false);
       }
     };
-
     fetchMemories();
   }, []);
-
 
   const { logout } = useAuth();
   const router = useRouter();
@@ -64,6 +61,29 @@ export default function Page() {
   );
 
   useEffect(() => {
+  fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: "test log" })
+  })
+    .then(res => res.json())
+    .then(data => console.log("API returned:", data))
+    .catch(err => console.error(err));
+  }, []);
+
+
+  useEffect(() => {
+  fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: "test" })
+  })
+  .then(r => r.json())
+  .then(d => console.log("Client got:", d));
+  }, []);
+
+
+  useEffect(() => {
     setLoading(true);
 
     const filtered = allMemories.filter((m) => {
@@ -77,10 +97,7 @@ export default function Page() {
         const memDate = new Date(m.createdAt);
         if (isNaN(memDate.getTime())) return false;
 
-        // normalize memDate to YYYY-MM-DD
         const memDateStr = memDate.toISOString().split("T")[0];
-
-        // normalize user input date to YYYY-MM-DD
         let filterDate = filters.date;
         if (filterDate.includes("/")) {
           const [month, day, year] = filterDate.split("/");
@@ -131,9 +148,34 @@ export default function Page() {
     setProcessing(false);
   };
 
+  // ------------------------------
+  // NEW: Chat API fetch feature
+  // ------------------------------
+  const [chatApiResult, setChatApiResult] = useState(null);
+  const [chatApiLoading, setChatApiLoading] = useState(false);
+
+  const fetchHackathonPhotos = async () => {
+    setChatApiLoading(true);
+    setChatApiResult(null);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "show me hackathon photos from alice" })
+      });
+      const data = await res.json();
+      setChatApiResult(data);
+    } catch (err) {
+      console.error("Chat API error:", err);
+      setChatApiResult({ error: err.message });
+    } finally {
+      setChatApiLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-cover bg-center bg-fixed relative" style={{ backgroundImage: `url('/backdrop.png')` }}>
-      <div className="absolute inset-0 bg-black opacity-70"></div> {/* Dark overlay for readability */}
+      <div className="absolute inset-0 bg-black opacity-70"></div>
       {/* Header with glassmorphism */}
       <header className="sticky top-0 z-50 bg-white/20 backdrop-blur-xl border-b border-white/40">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -169,6 +211,23 @@ export default function Page() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+        {/* NEW: Chat API button */}
+        <div className="mb-6">
+          <button
+            onClick={fetchHackathonPhotos}
+            className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200"
+          >
+            Fetch Hackathon Photos
+          </button>
+          {chatApiLoading && <div className="text-white mt-2">Loading...</div>}
+          {chatApiResult && (
+            <pre className="text-white bg-black/30 p-2 mt-2 rounded-md overflow-x-auto">
+              {JSON.stringify(chatApiResult, null, 2)}
+            </pre>
+          )}
+        </div>
+
         {/* Filter Button */}
         <div className="mb-6 flex justify-between items-center">
           <button
@@ -245,7 +304,7 @@ export default function Page() {
       className="fixed right-4 bottom-4 z-40 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full w-14 h-14 shadow-2xl flex items-center justify-center text-white text-xl transition-all duration-200 transform hover:scale-110"
       onClick={() => {
         setChatPreview(undefined);
-        setChatOpen(true);
+        setShowChat(true);
       }}
       >
       💬

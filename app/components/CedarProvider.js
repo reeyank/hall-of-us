@@ -1,12 +1,15 @@
 "use client";
 
 import { CedarCopilot } from 'cedar-os';
-import LangChainProvider from './LangChainProvider';
+import { cedarConfig } from '../cedar/config';
 
 export default function CedarProvider({ children }) {
-  console.log('CedarProvider: Rendering CedarCopilot with LangChainProvider');
   return (
-    <CedarCopilot llmProvider={LangChainProvider}>
+    <CedarCopilot 
+      config={{
+        agent: cedarConfig.agent
+      }}
+    >
       {children}
     </CedarCopilot>
   );
