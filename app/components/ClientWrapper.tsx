@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { CedarCopilot, ProviderConfig } from "cedar-os";
 import type {
   CustomParams,
@@ -26,6 +27,36 @@ interface LangChainCustomParams extends CustomParams {
 type LangChainConfig = { provider: 'custom'; config: Record<string, unknown> };
 
 export default function ClientWrapper({ children }: { children: React.ReactNode }) {
+  const [apiKey, setApiKey] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Function to fetch API key from the endpoint
+  const fetchApiKey = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/langchain/get_key');
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch API key: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // The response is the key itself, not an object with a key property
+      const key = typeof data === 'string' ? data : data.key || '';
+
+      setApiKey(key);
+    } catch (error) {
+      // Fallback to environment variable if API call fails
+      setApiKey(process.env.NEXT_PUBLIC_OPENAI_API_KEY || '');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch API key on component mount
+  useEffect(() => {
+    fetchApiKey();
+  }, []);
   const LangChainProvider: ProviderConfig = {
     provider: "custom",
     config: {
@@ -246,15 +277,18 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
     },
   };
 
+  // Don't render until API key is loaded
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    // <CedarCopilot llmProvider={LangChainProvider}>
     <CedarCopilot
-    llmProvider={{
-      provider: 'openai',
-      apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
-    }}>
+      llmProvider={{
+        provider: 'openai',
+        apiKey: apiKey,
+      }}>
       <AuthProvider>{children}</AuthProvider>
     </CedarCopilot>
-    // </CedarCopilot>
   );
 }

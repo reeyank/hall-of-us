@@ -54,7 +54,7 @@ export default function Page() {
   });
 
   useSubscribeStateToAgentContext('allMemories', (allMemories) => ({ allMemories }), {
-    showInChat: true,
+    showInChat: false,
     color: '#4F46E5',
   });
 
