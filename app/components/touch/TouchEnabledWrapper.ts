@@ -1,6 +1,6 @@
 "use client";
-import React, { useRef, useEffect, Children, cloneElement } from 'react';
-import { MouseEvent, ActivationMode, ActivationConditions } from 'cedar-os';
+import React, { useRef, useEffect, cloneElement } from 'react';
+import { MouseEvent } from 'cedar-os';
 
 // Touch gesture configuration
 interface TouchGestureConfig {
@@ -18,7 +18,7 @@ interface TouchGestureMapping {
 }
 
 interface TouchEnabledWrapperProps {
-  children: React.ReactElement;
+  children: React.ReactElement<any>;
   touchMapping?: TouchGestureMapping;
   touchConfig?: TouchGestureConfig;
 }
@@ -74,7 +74,7 @@ export function TouchEnabledWrapper({
   const triggerMouseEvent = (eventType: string, clientX: number, clientY: number, button: number = 0) => {
     if (!elementRef.current) return;
 
-    const mouseEvent = new MouseEvent(eventType, {
+    const mouseEvent = new window.MouseEvent(eventType, {
       bubbles: true,
       cancelable: true,
       clientX,
@@ -111,14 +111,25 @@ export function TouchEnabledWrapper({
     }
   };
 
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+
+    // During long press, emit mousemove events to enable radial menu highlighting
+    if (touchState.current.isLongPress) {
+      triggerMouseEvent('mousemove', touch.clientX, touch.clientY);
+    }
+  };
+
   const handleTouchEnd = (e: React.TouchEvent) => {
     const touch = e.changedTouches[0];
     const endPos = { x: touch.clientX, y: touch.clientY };
 
     clearTimers();
 
-    // If it was a long press, don't process tap events
+    // If it was a long press, trigger mouseup to end the drag operation
     if (touchState.current.isLongPress) {
+      const button = touchMapping.longPress === MouseEvent.RIGHT_CLICK ? 2 : 0;
+      triggerMouseEvent('mouseup', touch.clientX, touch.clientY, button);
       resetTouchState();
       return;
     }
@@ -140,17 +151,20 @@ export function TouchEnabledWrapper({
       switch (touchState.current.tapCount) {
         case 1:
           if (touchMapping.singleTap) {
-            triggerMouseEvent(touchMapping.singleTap, e.nativeEvent);
+            triggerMouseEvent('click', touch.clientX, touch.clientY);
           }
           break;
         case 2:
           if (touchMapping.doubleTap) {
-            triggerMouseEvent(touchMapping.doubleTap, e.nativeEvent);
+            const eventType = touchMapping.doubleTap === MouseEvent.DOUBLE_CLICK ? 'dblclick' : 'click';
+            triggerMouseEvent(eventType, touch.clientX, touch.clientY);
           }
           break;
         case 3:
           if (touchMapping.tripleTap) {
-            triggerMouseEvent(touchMapping.tripleTap, e.nativeEvent);
+            const eventType = 'click';
+            const button = touchMapping.tripleTap === MouseEvent.MIDDLE_CLICK ? 1 : 0;
+            triggerMouseEvent(eventType, touch.clientX, touch.clientY, button);
           }
           break;
       }
@@ -172,45 +186,47 @@ export function TouchEnabledWrapper({
 
   // Clone the child element and add touch event handlers
   const childWithTouchHandlers = cloneElement(children, {
+    ...children.props,
     ref: (ref: any) => {
       elementRef.current = ref;
       // If the child had a ref, preserve it
-      if (typeof children.ref === 'function') {
-        children.ref(ref);
-      } else if (children.ref) {
-        (children.ref as any).current = ref;
+      const originalRef = (children as any).ref;
+      if (typeof originalRef === 'function') {
+        originalRef(ref);
+      } else if (originalRef) {
+        (originalRef as any).current = ref;
       }
     },
     onTouchStart: (e: React.TouchEvent) => {
       handleTouchStart(e);
       // Call original onTouchStart if it exists
-      if (children.props.onTouchStart) {
-        children.props.onTouchStart(e);
+      if ((children.props as any).onTouchStart) {
+        (children.props as any).onTouchStart(e);
       }
     },
     onTouchMove: (e: React.TouchEvent) => {
       handleTouchMove(e);
       // Call original onTouchMove if it exists
-      if (children.props.onTouchMove) {
-        children.props.onTouchMove(e);
+      if ((children.props as any).onTouchMove) {
+        (children.props as any).onTouchMove(e);
       }
     },
     onTouchEnd: (e: React.TouchEvent) => {
       handleTouchEnd(e);
       // Call original onTouchEnd if it exists
-      if (children.props.onTouchEnd) {
-        children.props.onTouchEnd(e);
+      if ((children.props as any).onTouchEnd) {
+        (children.props as any).onTouchEnd(e);
       }
     },
     onTouchCancel: (e: React.TouchEvent) => {
       handleTouchCancel();
       // Call original onTouchCancel if it exists
-      if (children.props.onTouchCancel) {
-        children.props.onTouchCancel(e);
+      if ((children.props as any).onTouchCancel) {
+        (children.props as any).onTouchCancel(e);
       }
     },
     style: {
-      ...children.props.style,
+      ...(children.props as any).style,
       touchAction: 'none', // Prevent default touch behaviors during drag
       userSelect: 'none', // Prevent text selection on touch
     }
@@ -271,16 +287,21 @@ export function useTouchGestures(
       if (touchMapping.longPress) {
         longPressTimer.current = setTimeout(() => {
           touchState.current.isLongPress = true;
-          // Trigger a synthetic mouse event
-          const syntheticMouseEvent = {
-            ...e,
-            button: touchMapping.longPress === MouseEvent.RIGHT_CLICK ? 2 : 0,
-            type: touchMapping.longPress === MouseEvent.RIGHT_CLICK ? 'contextmenu' : 'click'
-          };
 
-          // Dispatch the appropriate event
+          // Trigger mousedown for long press start
+          const button = touchMapping.longPress === MouseEvent.RIGHT_CLICK ? 2 : 0;
+          e.currentTarget.dispatchEvent(new window.MouseEvent('mousedown', {
+            bubbles: true,
+            cancelable: true,
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            button,
+            buttons: button === 0 ? 1 : button === 2 ? 2 : 4,
+          }));
+
+          // Also trigger contextmenu if it's a right-click mapping
           if (touchMapping.longPress === MouseEvent.RIGHT_CLICK) {
-            e.currentTarget.dispatchEvent(new MouseEvent('contextmenu', {
+            e.currentTarget.dispatchEvent(new window.MouseEvent('contextmenu', {
               bubbles: true,
               cancelable: true,
               clientX: touch.clientX,
@@ -291,6 +312,20 @@ export function useTouchGestures(
       }
     },
 
+    onTouchMove: (e: React.TouchEvent) => {
+      const touch = e.touches[0];
+
+      // During long press, emit mousemove events to enable radial menu highlighting
+      if (touchState.current.isLongPress) {
+        e.currentTarget.dispatchEvent(new window.MouseEvent('mousemove', {
+          bubbles: true,
+          cancelable: true,
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+        }));
+      }
+    },
+
     onTouchEnd: (e: React.TouchEvent) => {
       const touch = e.changedTouches[0];
       const endPos = { x: touch.clientX, y: touch.clientY };
@@ -298,6 +333,16 @@ export function useTouchGestures(
       clearTimers();
 
       if (touchState.current.isLongPress) {
+        // Trigger mouseup to end the drag operation
+        const button = touchMapping.longPress === MouseEvent.RIGHT_CLICK ? 2 : 0;
+        e.currentTarget.dispatchEvent(new window.MouseEvent('mouseup', {
+          bubbles: true,
+          cancelable: true,
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+          button,
+          buttons: button === 0 ? 1 : button === 2 ? 2 : 4,
+        }));
         resetTouchState();
         return;
       }
@@ -320,7 +365,7 @@ export function useTouchGestures(
 
         if (tapCount === 2 && touchMapping.doubleTap) {
           // Trigger double-click event
-          e.currentTarget.dispatchEvent(new MouseEvent('dblclick', {
+          e.currentTarget.dispatchEvent(new window.MouseEvent('dblclick', {
             bubbles: true,
             cancelable: true,
             clientX: touch.clientX,
@@ -328,7 +373,7 @@ export function useTouchGestures(
           }));
         } else if (tapCount === 3 && touchMapping.tripleTap) {
           // Trigger middle-click or custom event for triple tap
-          e.currentTarget.dispatchEvent(new MouseEvent('click', {
+          e.currentTarget.dispatchEvent(new window.MouseEvent('click', {
             bubbles: true,
             cancelable: true,
             clientX: touch.clientX,

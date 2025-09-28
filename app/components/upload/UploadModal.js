@@ -42,7 +42,6 @@ function MyComponent() {
 			},
 		},
 	];
-  console.log("Rendering MyComponent");
 
 	return (
 
@@ -61,7 +60,7 @@ function MyComponent() {
 			items={menuItems}
 			activationConditions={{
 				events: [MouseEvent.RIGHT_CLICK],
-				mode: ActivationMode.HOLD,
+				mode: ActivationMode.TOGGLE,
 			}}
 		/>
 </TouchEnabledWrapper>
