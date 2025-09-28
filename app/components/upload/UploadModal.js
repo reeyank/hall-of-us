@@ -93,33 +93,6 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
   // Cedar: open chat and push context
   const setShowChat = useCedarStore((s) => s.setShowChat);
 
-  // Helpers to convert File or preview URL to base64 data URL
-  const fileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      if (!file) return resolve(null);
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (err) => reject(err);
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const blobUrlToBase64 = async (url) => {
-    try {
-      const resp = await fetch(url);
-      const blob = await resp.blob();
-      return await fileToBase64(blob);
-    } catch (e) {
-      return null;
-    }
-  };
-
-  const getFileBase64 = async () => {
-    if (file) return await fileToBase64(file);
-    if (preview) return await blobUrlToBase64(preview);
-    return null;
-  };
-
   const openCedarEnhance = (imgUrl) => {
     try {
       const store = useCedarStore.getState();
@@ -156,9 +129,8 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
   };
 
   const handleEnhanceClick = async () => {
-    const fileBase64 = await getFileBase64();
     // prefer base64 data if available, otherwise fallback to preview URL
-    const payload = fileBase64 ?? preview ?? undefined;
+    const payload = imageUrl;
     openCedarEnhance(payload);
     if (typeof onOpenEnhance === 'function') onOpenEnhance(payload);
   };
@@ -279,15 +251,14 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
     try {
       const store = useCedarStore.getState();
 
-      const fileBase64 = await getFileBase64();
+      const imageUrl = await getImageUrl();
       const response = await fetch('http://localhost:8000/langchain/chat/generate-tags', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          image_base64: fileBase64,
-          image_url: preview,
+          image_url: imageUrl,
           current_tags: selectedTags,
           cedar_state: {
             additionalContext: store.additionalContext,
@@ -318,15 +289,13 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
       const needed = Math.max(0, maxTags - selectedTags.length);
       if (needed <= 0) return;
 
-      const fileBase64 = await getFileBase64();
       const response = await fetch('http://localhost:8000/langchain/chat/fill-tags', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          image_base64: fileBase64,
-          image_url: preview,
+          image_url: imageUrl,
           current_tags: selectedTags,
           max_tags: maxTags,
           needed_tags: needed,
@@ -360,15 +329,13 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
     try {
       const store = useCedarStore.getState();
 
-      const fileBase64 = await getFileBase64();
       const response = await fetch('http://localhost:8000/langchain/chat/generate-caption', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          image_base64: fileBase64,
-          image_url: preview,
+          image_url: imageUrl,
           tags: selectedTags,
           filename: file?.name,
           cedar_state: {
@@ -404,15 +371,13 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
     try {
       const store = useCedarStore.getState();
 
-      const fileBase64 = await getFileBase64();
       const response = await fetch('http://localhost:8000/langchain/chat/fill-caption', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          image_base64: fileBase64,
-          image_url: preview,
+          image_url: imageUrl,
           current_caption: caption,
           tags: selectedTags,
           filename: file?.name,
