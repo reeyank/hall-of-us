@@ -251,7 +251,6 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
     try {
       const store = useCedarStore.getState();
 
-      const imageUrl = await getImageUrl();
       const response = await fetch('http://localhost:8000/langchain/chat/generate-tags', {
         method: 'POST',
         headers: {
