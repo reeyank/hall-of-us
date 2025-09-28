@@ -53,20 +53,32 @@ export default function Page() {
     },
   });
 
-  useSubscribeStateToAgentContext('allMemories', (allMemories) => ({ allMemories }), {
+  useSubscribeStateToAgentContext('allMemories', (allMemories) => ({ 
+    allMemories: allMemories.map(memory => ({
+      id: memory.id,
+      userId: memory.userId,
+      caption: memory.caption,
+      tags: memory.tags,
+      createdAt: memory.createdAt,
+      likes: memory.likes,
+      s3Url: memory.s3Url
+    })),
+    memoryStats: {
+      totalMemories: allMemories.length,
+      totalTags: Array.from(new Set(allMemories.flatMap(m => m.tags))).length,
+      totalUsers: Array.from(new Set(allMemories.map(m => m.userId))).length,
+      mostPopularTags: Array.from(new Set(allMemories.flatMap(m => m.tags)))
+        .map(tag => ({
+          tag,
+          count: allMemories.filter(m => m.tags.includes(tag)).length
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5)
+    }
+  }), {
     showInChat: false,
     color: '#4F46E5',
-  });
-
-  useRegisterFrontendTool({
-    name: 'removeMemory',
-    description: 'Add a new line of text to the screen via frontend tool',
-    argsSchema: z.object({
-      memoryId: z.string().min(1, 'Memory ID cannot be empty').describe('The ID of the memory to remove'),
-    }),
-    execute: async (args) => {
-      setAllMemories(allMemories.filter(m => m.id !== args.memoryId));
-    },
+    label: `${allMemories.length} memories available`,
   });
 
   useEffect(() => {
