@@ -1,6 +1,6 @@
 
 import { useSpell, useCedarStore, ActivationMode } from 'cedar-os';
-// import { useEffect } from 'react'; // Remove useEffect if not used
+import { useCallback } from 'react';
 
 interface Memory {
   id: string;
@@ -13,7 +13,9 @@ interface AgentContextType {
 }
 
 export function RemoveMemorySpell() {
-  const onMemoriesUpdated = useCedarStore((state: any) => state.onMemoriesUpdated);
+  // Use a stable selector to avoid infinite loops
+  const stateMethodsSelector = useCallback((state: any) => state.stateMethods, []);
+  const stateMethods = useCedarStore(stateMethodsSelector);
 
   useSpell({
     id: 'remove-memory-spell',
@@ -23,7 +25,6 @@ export function RemoveMemorySpell() {
       const { message } = activation;
       const { allMemories } = context;
 
-      let updatedMemories = [...allMemories];
       let replyMessage = '';
       let idToRemove: string | undefined;
 
@@ -43,28 +44,46 @@ export function RemoveMemorySpell() {
       }
 
       if (idToRemove) {
-        const initialLength = updatedMemories.length;
-        updatedMemories = updatedMemories.filter(m => m.id !== idToRemove);
-        if (updatedMemories.length < initialLength) {
-          replyMessage = `Memory with ID ${idToRemove} removed.`;
+        // Use the registered removeMemory state setter
+        const removeMemoryMethod = stateMethods?.allMemories?.removeMemory;
+        if (removeMemoryMethod) {
+          const memoryExists = allMemories.some(m => m.id === idToRemove);
+          if (memoryExists) {
+            removeMemoryMethod({ memoryId: idToRemove });
+            replyMessage = `Memory with ID ${idToRemove} removed from your feed.`;
+          } else {
+            replyMessage = `Memory with ID ${idToRemove} not found.`;
+          }
         } else {
-          replyMessage = `Memory with ID ${idToRemove} not found.`;
+          replyMessage = "Unable to remove memory - state method not available.";
         }
       } else if (message.toLowerCase().includes('remove memory id:')) {
         idToRemove = message.split('remove memory id:')[1].trim();
-        const initialLength = updatedMemories.length;
-        updatedMemories = updatedMemories.filter(m => m.id !== idToRemove);
-        if (updatedMemories.length < initialLength) {
-          replyMessage = `Memory with ID ${idToRemove} removed.`;
+        const removeMemoryMethod = stateMethods?.allMemories?.removeMemory;
+        if (removeMemoryMethod) {
+          const memoryExists = allMemories.some(m => m.id === idToRemove);
+          if (memoryExists) {
+            removeMemoryMethod({ memoryId: idToRemove });
+            replyMessage = `Memory with ID ${idToRemove} removed from your feed.`;
+          } else {
+            replyMessage = `Memory with ID ${idToRemove} not found.`;
+          }
         } else {
-          replyMessage = `Memory with ID ${idToRemove} not found.`;
+          replyMessage = "Unable to remove memory - state method not available.";
         }
       } else if (message.toLowerCase().includes('remove memories with tag:')) {
         const tagToRemove = message.split('remove memories with tag:')[1].trim();
-        const initialLength = updatedMemories.length;
-        updatedMemories = updatedMemories.filter(m => !m.tags.includes(tagToRemove));
-        if (updatedMemories.length < initialLength) {
-          replyMessage = `Memories with tag '${tagToRemove}' removed.`;
+        const memoriesToRemove = allMemories.filter(m => m.tags.includes(tagToRemove));
+        if (memoriesToRemove.length > 0) {
+          const removeMemoryMethod = stateMethods?.allMemories?.removeMemory;
+          if (removeMemoryMethod) {
+            memoriesToRemove.forEach(memory => {
+              removeMemoryMethod({ memoryId: memory.id });
+            });
+            replyMessage = `Removed ${memoriesToRemove.length} memories with tag '${tagToRemove}'.`;
+          } else {
+            replyMessage = "Unable to remove memories - state method not available.";
+          }
         } else {
           replyMessage = `No memories found with tag '${tagToRemove}'.`;
         }
@@ -72,16 +91,11 @@ export function RemoveMemorySpell() {
         replyMessage = "I can help you remove memories. Try 'remove memory ID: [ID]' or 'remove memories with tag: [tag]'.";
       }
 
-      if (onMemoriesUpdated) {
-        onMemoriesUpdated(updatedMemories);
-      }
-
       chat.send(replyMessage);
     },
     activationConditions: {
-      events: [],
-      mode: ActivationMode.TAP, // Use ActivationMode.TAP
-      pattern: '(remove memory|remove memories|\\{.*"memoryId":".*".*\\})', // General text match or JSON for activation
+      events: ['r'], // Activate with 'r' key
+      mode: ActivationMode.HOLD,
     },
   });
 

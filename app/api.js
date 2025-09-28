@@ -85,3 +85,62 @@ export function generateSampleMemories(n = 6, startSeed = 1) {
   }
   return mems;
 }
+
+export const removeMemoryFromBackend = async (memoryId) => {
+  try {
+    const response = await fetch('/langchain/chat/remove-memory', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        memory_id: memoryId,
+        cedar_state: {
+          timestamp: new Date().toISOString(),
+          source: 'cedaros_frontend'
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error removing memory from backend:', error);
+    throw error;
+  }
+};
+
+export const getMemoryToRemoveFromChat = async (chatContext, allMemories) => {
+  try {
+    const response = await fetch('http://localhost:8000/chat/remove-memory', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_context: chatContext,
+        available_memories: allMemories.map(m => ({
+          id: m.id,
+          caption: m.caption || '',
+          tags: m.tags || [],
+          userId: m.userId || '',
+          createdAt: m.createdAt || ''
+        }))
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result; // Should contain { memoryId: "some-id", success: true/false, message: "..." }
+  } catch (error) {
+    console.error('Error getting memory to remove from chat context:', error);
+    throw error;
+  }
+};

@@ -53,13 +53,6 @@ export default function MemoryCard({ memory }) {
         {/* Image */}
         <img src={memory.s3Url} alt={memory.caption} className="w-full h-auto object-cover" />
 
-        {/* Caption + tags */}
-        {/* <div className="p-3 text-white">
-          <p className="mt-1">{memory.caption}</p>
-          <p className="mt-1 text-blue-400">
-            {memory.tags.map((t) => `#${t} `)}
-          </p>
-        </div> */}
 
         {/* Actions row */}
         {/* <div className="flex items-center gap-2 p-3">
@@ -100,6 +93,13 @@ export default function MemoryCard({ memory }) {
           </div>
         </div>
       </div>
+      
+      {/* Caption below the plaque */}
+      {memory.caption && (
+        <div className="text-white text-sm text-center mt-3 px-4">
+          {memory.caption}
+        </div>
+      )}
     </div>
   );
 }

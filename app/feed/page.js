@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import { fetchMemoriesStub } from "../api";
+import { fetchMemoriesStub, removeMemoryFromBackend, getMemoryToRemoveFromChat } from "../api";
 import { PAGE_SIZE, DEFAULT_FEED_BG, PROCESSING_COLOR } from "./constants";
 import { useAuth } from "../components/AuthProvider";
 import { useRouter } from 'next/navigation';
@@ -23,7 +23,6 @@ export default function Page() {
   const [processing, setProcessing] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-
   const setShowChat = useCedarStore((state) => state.setShowChat);
 
   const [allMemories, setAllMemories] = useState([]);
@@ -31,7 +30,7 @@ export default function Page() {
 
   useRegisterState({
     key: 'allMemories',
-    description: 'The memories that can be removed by Cedar',
+    description: 'The memories that can be removed by Cedar. Current count: ' + allMemories.length,
     value: allMemories,
     setValue: setAllMemories,
     stateSetters: {
@@ -41,31 +40,184 @@ export default function Page() {
         argsSchema: z.object({
           memoryId: z.string().min(1, 'Memory ID cannot be empty').describe('The ID of the memory to remove'),
         }),
-        execute: (
-          allMemories,
-          setValue,
-          args,
-        ) => {
-          setValue(allMemories.filter(m => m.id !== args.memoryId));
-          setAllMemories(allMemories.filter(m => m.id !== args.memoryId));
+        execute: async (args) => {
+          console.log('State setter removeMemory called with:', args);
+          console.log('Current allMemories:', allMemories.map(m => ({ id: m.id, caption: m.caption })));
+          
+          try {
+            // Call backend API first
+            const backendResult = await removeMemoryFromBackend(args.memoryId);
+            console.log('Backend removal result:', backendResult);
+            
+            if (backendResult.success) {
+              const filtered = allMemories.filter(m => m.id !== args.memoryId);
+              console.log('State setter filtered count:', filtered.length);
+              setAllMemories(filtered);
+              return { success: true, message: 'Memory removed successfully' };
+            } else {
+              return { success: false, message: 'Backend failed to remove memory' };
+            }
+          } catch (error) {
+            console.error('Error in state setter removeMemory:', error);
+            return { success: false, message: error.message };
+          }
         },
       },
     },
   });
 
   useSubscribeStateToAgentContext('allMemories', (allMemories) => ({ allMemories }), {
-    showInChat: true,
+    showInChat: false,
     color: '#4F46E5',
   });
 
   useRegisterFrontendTool({
+    name: 'removeMemoryFromChat',
+    description: 'Remove a memory based on chat context. The system will analyze the conversation to determine which memory to remove.',
+    argsSchema: z.object({
+      chatContext: z.string().describe('The current chat conversation context'),
+    }),
+    execute: async (args) => {
+      console.log('removeMemoryFromChat tool called with context:', args.chatContext);
+      console.log('Current allMemories:', allMemories.map(m => ({ id: m.id, caption: m.caption })));
+      
+      if (allMemories.length === 0) {
+        return { success: false, message: 'No memories available to remove' };
+      }
+      
+      try {
+        // Call the new API to determine which memory to remove based on chat context
+        const chatResult = await getMemoryToRemoveFromChat(args.chatContext, allMemories);
+        console.log('Chat analysis result:', chatResult);
+        
+        if (!chatResult.success || !chatResult.memoryId) {
+          return { 
+            success: false, 
+            message: chatResult.message || 'Could not determine which memory to remove from chat context'
+          };
+        }
+        
+        const memoryToRemove = allMemories.find(m => m.id === chatResult.memoryId);
+        if (!memoryToRemove) {
+          return { 
+            success: false, 
+            message: `Memory with ID ${chatResult.memoryId} not found in current memories`
+          };
+        }
+        
+        // Remove the memory from the frontend state
+        const filtered = allMemories.filter(m => m.id !== chatResult.memoryId);
+        console.log('Filtered memories:', filtered.length);
+        setAllMemories(filtered);
+        
+        return { 
+          success: true, 
+          memoryId: chatResult.memoryId, 
+          removedMemory: memoryToRemove,
+          message: `Removed memory: ${memoryToRemove.caption || memoryToRemove.id}`,
+          chatAnalysis: chatResult
+        };
+      } catch (error) {
+        console.error('Error removing memory from chat context:', error);
+        return { 
+          success: false, 
+          message: `Failed to remove memory from chat context: ${error.message}` 
+        };
+      }
+    },
+  });
+
+  useRegisterFrontendTool({
     name: 'removeMemory',
-    description: 'Add a new line of text to the screen via frontend tool',
+    description: 'Remove a specific memory from the feed by ID. Use removeMemoryFromChat for context-based removal.',
     argsSchema: z.object({
       memoryId: z.string().min(1, 'Memory ID cannot be empty').describe('The ID of the memory to remove'),
     }),
     execute: async (args) => {
-      setAllMemories(allMemories.filter(m => m.id !== args.memoryId));
+      console.log('removeMemory tool called with:', args);
+      console.log('Current allMemories:', allMemories.map(m => ({ id: m.id, caption: m.caption })));
+      
+      const memoryExists = allMemories.find(m => m.id === args.memoryId);
+      if (!memoryExists) {
+        console.log('Memory not found with ID:', args.memoryId);
+        return { success: false, memoryId: args.memoryId, message: `Memory with ID ${args.memoryId} not found` };
+      }
+      
+      try {
+        // Call the backend API to remove the memory
+        const backendResult = await removeMemoryFromBackend(args.memoryId);
+        console.log('Backend removal result:', backendResult);
+        
+        // If backend removal is successful, update the frontend state
+        if (backendResult.success) {
+          const filtered = allMemories.filter(m => m.id !== args.memoryId);
+          console.log('Filtered memories:', filtered.length);
+          setAllMemories(filtered);
+          
+          return { 
+            success: true, 
+            memoryId: args.memoryId, 
+            message: `Memory ${args.memoryId} removed successfully from both frontend and backend`,
+            backendResponse: backendResult
+          };
+        } else {
+          return { 
+            success: false, 
+            memoryId: args.memoryId, 
+            message: `Backend failed to remove memory: ${backendResult.message || 'Unknown error'}` 
+          };
+        }
+      } catch (error) {
+        console.error('Error calling backend to remove memory:', error);
+        return { 
+          success: false, 
+          memoryId: args.memoryId, 
+          message: `Failed to remove memory from backend: ${error.message}` 
+        };
+      }
+    },
+  });
+
+  useRegisterFrontendTool({
+    name: 'listMemoryIds',
+    description: 'List all available memory IDs for removal',
+    argsSchema: z.object({}),
+    execute: async () => {
+      const memoryList = allMemories.map(m => ({ id: m.id, caption: m.caption || 'No caption', userId: m.userId }));
+      console.log('Available memories:', memoryList);
+      return { 
+        success: true, 
+        memories: memoryList,
+        message: `Found ${memoryList.length} memories. IDs: ${memoryList.map(m => m.id).join(', ')}` 
+      };
+    },
+  });
+
+  // Additional tool for backend-only removal (if needed)
+  useRegisterFrontendTool({
+    name: 'removeMemoryFromBackend',
+    description: 'Remove a memory from backend storage only (without frontend state update)',
+    argsSchema: z.object({
+      memoryId: z.string().min(1, 'Memory ID cannot be empty').describe('The ID of the memory to remove'),
+    }),
+    execute: async (args) => {
+      try {
+        const backendResult = await removeMemoryFromBackend(args.memoryId);
+        return {
+          success: backendResult.success,
+          memoryId: args.memoryId,
+          message: backendResult.success 
+            ? `Memory ${args.memoryId} removed from backend storage`
+            : `Failed to remove memory from backend: ${backendResult.message}`,
+          backendResponse: backendResult
+        };
+      } catch (error) {
+        return {
+          success: false,
+          memoryId: args.memoryId,
+          message: `Error removing memory from backend: ${error.message}`
+        };
+      }
     },
   });
 
@@ -88,7 +240,6 @@ export default function Page() {
     fetchMemories();
   }, []);
 
-
   const { logout } = useAuth();
   const router = useRouter();
 
@@ -107,6 +258,7 @@ export default function Page() {
   );
 
   useEffect(() => {
+    console.log('useEffect for filtering memories triggered. allMemories.length:', allMemories.length);
     setLoading(true);
 
     const filtered = allMemories.filter((m) => {
@@ -136,6 +288,7 @@ export default function Page() {
       return true;
     });
 
+    console.log('Setting memories to filtered.slice(0, pageSize). Filtered count:', filtered.length, 'pageSize:', pageSize);
     setMemories(filtered.slice(0, pageSize));
     setLoading(false);
   }, [filters, pageSize, allMemories]);
@@ -160,8 +313,14 @@ export default function Page() {
 
     setMemories(filtered.slice(0, pageSize));
   };
+
   const handleUploadCreated = (m) => setMemories((prev) => [m, ...prev]);
-  const handleOpenEnhance = (preview) => { setChatPreview(preview); setShowChat(true); };
+  
+  const handleOpenEnhance = (preview) => { 
+    setChatPreview(preview); 
+    setShowChat(true); 
+  };
+  
   const handleProcess = async (memoryId) => {
     setProcessing(true);
     await new Promise((r) => setTimeout(r, 1800));
@@ -172,6 +331,23 @@ export default function Page() {
         : m
     ));
     setProcessing(false);
+  };
+
+  // Optional: Add a manual remove function for UI buttons
+  const handleRemoveMemory = async (memoryId) => {
+    try {
+      const backendResult = await removeMemoryFromBackend(memoryId);
+      if (backendResult.success) {
+        setAllMemories(prev => prev.filter(m => m.id !== memoryId));
+        console.log(`Memory ${memoryId} removed successfully`);
+      } else {
+        console.error('Failed to remove memory:', backendResult.message);
+        // You could show a toast notification here
+      }
+    } catch (error) {
+      console.error('Error removing memory:', error);
+      // You could show an error toast notification here
+    }
   };
 
   return (
@@ -246,7 +422,11 @@ export default function Page() {
           ) : (
             memories.map((m) => (
               <div key={m.id} className="transform transition-all duration-200 hover:scale-105">
-                  <MemoryCard memory={m} onProcess={handleProcess} />
+                  <MemoryCard 
+                    memory={m} 
+                    onProcess={handleProcess}
+                    onRemove={handleRemoveMemory} // Optional: if you want to add remove buttons to cards
+                  />
               </div>
             ))
           )}
@@ -271,16 +451,6 @@ export default function Page() {
         onClick={() => setUploadOpen(true)}
       >
         +
-      </button>
-
-      <button
-      className="fixed right-4 bottom-4 z-40 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full w-14 h-14 shadow-2xl flex items-center justify-center text-white text-xl transition-all duration-200 transform hover:scale-110"
-      onClick={() => {
-        setChatPreview(undefined);
-        setChatOpen(true);
-      }}
-      >
-      💬
       </button>
 
       {/* Processing Notification */}
