@@ -166,6 +166,30 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cedarState.messages]);
 
+  // Listen for explicit requests dispatched from the ChatInput (Use-as-filter button)
+  useEffect(() => {
+    const onNaturalFilter = (e) => {
+      try {
+        const detail = e && e.detail ? e.detail : null;
+        if (!detail) return;
+        const { text, trigger } = detail;
+        // Avoid duplicates: if trigger has a messageId we've already processed, skip
+        if (trigger && trigger.messageId && trigger.messageId === lastSentMessageId.current) return;
+        if (trigger && trigger.messageId) {
+          lastSentMessageId.current = trigger.messageId;
+        }
+        // Call the same handler that the heuristic path uses
+        handleFilterText && handleFilterText(text, trigger || null);
+      } catch (err) {
+        console.error('Error handling naturalFilterRequest event', err);
+      }
+    };
+
+    window.addEventListener('naturalFilterRequest', onNaturalFilter);
+    return () => window.removeEventListener('naturalFilterRequest', onNaturalFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const containerClasses = isOverlay
     ? "space-y-4"
     : "bg-white p-3 rounded shadow-sm mb-4 flex items-center gap-3";
@@ -211,18 +235,14 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
               Apply Filters
             </button>
             <button
-              className={`${buttonClasses} bg-purple-600 hover:bg-purple-700 text-white flex-1 ${isFiltering ? 'opacity-50 cursor-not-allowed' : ''}`}
-              onClick={handleFilterImages}
-              disabled={isFiltering}
-            >
-              {isFiltering ? 'AI Filtering...' : 'AI Filter'}
-            </button>
-            <button
               className={`${buttonClasses} border border-gray-300 hover:bg-gray-50 text-gray-700 flex-1`}
               onClick={() => { setTag(""); setUserId(""); setDate(""); onApply({}); }}
             >
               Clear All
             </button>
+          </div>
+          <div className="mt-3 text-sm text-gray-600">
+            Tip: You can also type natural-language filter requests in the embedded Cedar chat below (e.g. "show me images tagged beach from alice after 2024-01-01").
           </div>
         </>
       ) : (
@@ -240,13 +260,12 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
           <input className={inputClasses} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
 
           <button className={`ml-auto bg-blue-600 text-white ${buttonClasses}`} onClick={() => onApply({ tags: tag ? [tag] : [], userId: userId || undefined, date: date || undefined })}>Apply</button>
-          <button className={`ml-2 bg-purple-600 text-white ${buttonClasses} ${isFiltering ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={handleFilterImages} disabled={isFiltering}>
-            {isFiltering ? 'AI Filtering...' : 'AI Filter'}
-          </button>
           <button className={`ml-2 border ${buttonClasses}`} onClick={() => { setTag(""); setUserId(""); setDate(""); onApply({}); }}>Clear</button>
+          <div className="ml-4 text-sm text-gray-600 hidden md:block">
+            Tip: use the embedded chat below to send natural-language filter requests.
+          </div>
         </>
       )}
-      <EmbeddedCedarChat />
     </div>
   );
 }
