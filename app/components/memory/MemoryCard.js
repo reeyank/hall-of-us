@@ -100,6 +100,11 @@ export default function MemoryCard({ memory }) {
           </div>
         </div>
       </div>
-    </div>
+      {memory.caption && (
+        <div className="text-white text-sm text-center mt-3 px-4">
+          {memory.caption}
+        </div>
+      )}
+      </div>
   );
 }
