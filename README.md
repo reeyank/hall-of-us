@@ -171,7 +171,3 @@ This folder contains the core application logic and components:
 - **`favicon.ico`**: The app's favicon.
 
 This structure ensures modularity and scalability, making it easier to maintain and extend the app.
-
-# Sister Repos
-
-## Backend repository
