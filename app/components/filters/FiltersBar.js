@@ -1,7 +1,10 @@
 "use client";
 import React, { useState } from "react";
+import { MouseEvent, useCedarStore } from "cedar-os";
+import TouchEnabledWrapper from "../touch/TouchEnabledWrapper";
 
 export default function FiltersBar({ tagsList, users, onApply, isOverlay = false }) {
+  const setShowChat = useCedarStore((state) => state.setShowChat);
   const [tag, setTag] = useState("");
   const [userId, setUserId] = useState("");
   const [date, setDate] = useState("");
@@ -18,7 +21,7 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
     ? "w-full py-2 px-4 rounded-lg font-medium transition-colors"
     : "px-3 py-1 rounded";
 
-  return (
+  const content = (
     <div className={containerClasses}>
       {isOverlay ? (
         <>
@@ -43,19 +46,42 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
             <input className={inputClasses} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
 
-          <div className="flex gap-3 mt-6">
-            <button
-              className={`${buttonClasses} bg-blue-600 hover:bg-blue-700 text-white flex-1`}
-              onClick={() => onApply({ tags: tag ? [tag] : [], userId: userId || undefined, date: date || undefined })}
-            >
-              Apply Filters
-            </button>
-            <button
-              className={`${buttonClasses} border border-gray-300 hover:bg-gray-50 text-gray-700 flex-1`}
-              onClick={() => { setTag(""); setUserId(""); setDate(""); onApply({}); }}
-            >
-              Clear All
-            </button>
+          <div className="mt-6 flex flex-col gap-3">
+            <div className="flex gap-3">
+              <button
+                className={`${buttonClasses} bg-blue-600 hover:bg-blue-700 text-white flex-1`}
+                onClick={() => onApply({ tags: tag ? [tag] : [], userId: userId || undefined, date: date || undefined })}
+              >
+                Apply Filters
+              </button>
+              <button
+                className={`${buttonClasses} border border-gray-300 hover:bg-gray-50 text-gray-700 flex-1`}
+                onClick={() => { setTag(""); setUserId(""); setDate(""); onApply({}); }}
+              >
+                Clear All
+              </button>
+            </div>
+            <div className="flex justify-end">
+              <TouchEnabledWrapper
+                touchMapping={{
+                  singleTap: MouseEvent.CLICK
+                }}
+                touchConfig={{
+                  tapThreshold: 10
+                }}
+              >
+                <button
+                  className="px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowChat(true);
+                  }}
+                >
+                  💬 Ask AI
+                </button>
+              </TouchEnabledWrapper>
+            </div>
           </div>
         </>
       ) : (
@@ -72,10 +98,42 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
 
           <input className={inputClasses} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
 
-          <button className={`ml-auto bg-blue-600 text-white ${buttonClasses}`} onClick={() => onApply({ tags: tag ? [tag] : [], userId: userId || undefined, date: date || undefined })}>Apply</button>
+          <div className="ml-auto flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <button 
+                className={`bg-blue-600 text-white ${buttonClasses}`} 
+                onClick={() => onApply({ tags: tag ? [tag] : [], userId: userId || undefined, date: date || undefined })}
+              >Apply</button>
+              <button 
+                className={`border ${buttonClasses}`} 
+                onClick={() => { setTag(""); setUserId(""); setDate(""); onApply({}); }}
+              >Clear</button>
+            </div>
+            <TouchEnabledWrapper
+              touchMapping={{
+                singleTap: MouseEvent.CLICK
+              }}
+              touchConfig={{
+                tapThreshold: 10
+              }}
+            >
+              <button
+                className="px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white rounded text-sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowChat(true);
+                }}
+              >
+                💬 Ask AI
+              </button>
+            </TouchEnabledWrapper>
+          </div>
           <button className={`ml-2 border ${buttonClasses}`} onClick={() => { setTag(""); setUserId(""); setDate(""); onApply({}); }}>Clear</button>
         </>
       )}
     </div>
   );
+
+  return content;
 }

@@ -9,7 +9,8 @@ import FiltersBar from "../components/filters/FiltersBar";
 import MemoryCard from "../components/memory/MemoryCard";
 import UploadModal from "../components/upload/UploadModal";
 import { FloatingCedarChat } from "../../src/cedar/components/chatComponents/FloatingCedarChat";
-import { useCedarStore } from 'cedar-os';
+import { useCedarStore, MouseEvent } from 'cedar-os';
+import TouchEnabledWrapper from '../components/touch/TouchEnabledWrapper';
 
 export default function Page() {
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
@@ -137,14 +138,25 @@ export default function Page() {
       <header className="sticky top-0 z-50 bg-white/20 backdrop-blur-xl border-b border-white/40">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white">
-                Hall of Us Feed
-              </h1>
-              <p className="text-sm text-gray-300 mt-1">
-                Discover and share your memories
-              </p>
-            </div>
+            <TouchEnabledWrapper
+              touchMapping={{
+                doubleTap: MouseEvent.DOUBLE_CLICK,
+                longPress: MouseEvent.RIGHT_CLICK,
+                tripleTap: MouseEvent.MIDDLE_CLICK
+              }}
+              touchConfig={{
+                longPressDuration: 500
+              }}
+            >
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                  Hall of Us Feed
+                </h1>
+                <p className="text-sm text-gray-300 mt-1">
+                  Discover and share your memories
+                </p>
+              </div>
+            </TouchEnabledWrapper>
             <button
               onClick={handleLogout}
               className="bg-white/10 backdrop-blur-md border border-white/30 text-white font-medium py-2 px-4 rounded-lg hover:bg-white/20 transition-all duration-200"
@@ -271,6 +283,7 @@ export default function Page() {
               users={allUsers}
               onApply={handleApplyFilters}
               isOverlay={true}
+              onLongPress={() => setShowChat(true)}
             />
           </div>
         </div>
