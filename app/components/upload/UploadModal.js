@@ -425,14 +425,7 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
 
     try {
       const form = new FormData();
-      // Convert file/preview to base64 and include it in the payload
-      const fileBase64 = await getFileBase64();
-      if (fileBase64) {
-        form.append("file_base64", fileBase64);
-      } else {
-        // Fallback to the raw file if conversion failed
-        form.append("file", file);
-      }
+      form.append("file", file);
       form.append("tags", selectedTags.join(","));
       form.append("caption", caption);
       form.append("user_id", localStorage.getItem("user"));
