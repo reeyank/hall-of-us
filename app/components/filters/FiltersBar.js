@@ -131,7 +131,7 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
       const requestId = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
       console.log('Sending natural-language filter request:', { text, trigger, requestId });
 
-      const response = await fetch(`http://localhost:8000/langchain/chat/filter_images`, {
+      const response = await fetch(`https://api.doubleehbatteries.com/langchain/chat/filter_images`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
