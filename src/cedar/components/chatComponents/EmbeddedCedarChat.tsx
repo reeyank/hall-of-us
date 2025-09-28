@@ -35,8 +35,8 @@ export const EmbeddedCedarChat: React.FC<EmbeddedCedarChatProps> = ({
 	};
 
 	return (
-		<div className={`w-full h-full ${className}`}>
-			<Container3D className='flex flex-col h-full w-full text-sm'>
+	    <div className={`w-full h-full ${className} cedar-floating-chat`}>
+		    <Container3D className='flex flex-col h-full w-full text-sm text-white'>
 				{/* Header */}
 				{showHeader && (
 					<div className='flex-shrink-0 z-20 flex flex-row items-center justify-between px-5 pt-3 min-w-0 border-b border-gray-200 dark:border-gray-700'>
@@ -71,6 +71,7 @@ export const EmbeddedCedarChat: React.FC<EmbeddedCedarChatProps> = ({
 						handleBlur={() => {}}
 						isInputFocused={false}
 						stream={stream}
+						hideContext={true}
 					/>
 				</div>
 			</Container3D>

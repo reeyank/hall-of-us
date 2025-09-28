@@ -1,5 +1,7 @@
 "use client";
 import React, { useState } from "react";
+import {CedarCaptionChat} from "../../../src/cedar/components/chatComponents/CedarCaptionChat"
+import {EmbeddedCedarChat} from "../../../src/cedar/components/chatComponents/EmbeddedCedarChat"
 
 export default function FiltersBar({ tagsList, users, onApply, isOverlay = false }) {
   const [tag, setTag] = useState("");
@@ -76,6 +78,7 @@ export default function FiltersBar({ tagsList, users, onApply, isOverlay = false
           <button className={`ml-2 border ${buttonClasses}`} onClick={() => { setTag(""); setUserId(""); setDate(""); onApply({}); }}>Clear</button>
         </>
       )}
+      <EmbeddedCedarChat />
     </div>
   );
 }

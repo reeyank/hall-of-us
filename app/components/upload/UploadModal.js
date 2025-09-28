@@ -610,12 +610,12 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
                   >
                     Upload Memory
                   </button>
-                  <button
+                  {/* <button
                     className="w-full py-3 px-4 rounded-lg font-medium transition-colors border border-gray-300 hover:bg-gray-50 text-gray-700"
                     onClick={handleEnhanceClick}
                   >
                     ✨ Enhance with AI
-                  </button>
+                  </button> */}
                 </div>
               </div>
             )}

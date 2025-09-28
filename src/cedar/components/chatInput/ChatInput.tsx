@@ -24,12 +24,14 @@ export const ChatInput: React.FC<{
 	isInputFocused?: boolean;
 	className?: string; // Additional classes for the container
 	stream?: boolean; // Whether to use streaming for responses
+	hideContext?: boolean; // When true, don't render context badges
 }> = ({
 	handleFocus,
 	handleBlur,
 	isInputFocused,
 	className = '',
 	stream = true,
+	hideContext = false,
 }) => {
 	const [isFocused, setIsFocused] = React.useState(false);
 
@@ -166,7 +168,7 @@ export const ChatInput: React.FC<{
 				className
 			)}>
 			{/* Input context row showing selected context nodes */}
-			<ContextBadgeRow editor={editor} />
+			<ContextBadgeRow editor={editor} hideContext={hideContext} />
 
 			{/* Chat editor row */}
 			<div className='relative w-full h-fit' id='cedar-chat-input'>

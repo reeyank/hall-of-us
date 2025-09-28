@@ -18,9 +18,15 @@ function normalizeToArray(
 
 interface ContextBadgeRowProps {
 	editor?: Editor | null;
+	hideContext?: boolean;
 }
 
-export const ContextBadgeRow: React.FC<ContextBadgeRowProps> = ({ editor }) => {
+export const ContextBadgeRow: React.FC<ContextBadgeRowProps> = ({
+	editor,
+	hideContext = false,
+}) => {
+	// If embedding requested context to be hidden, render nothing
+	if (hideContext) return null;
 	const removeContextEntry = useCedarStore((s) => s.removeContextEntry);
 	const mentionProviders = useCedarStore((s) => s.mentionProviders);
 	const additionalContext = useCedarStore((s) => s.additionalContext);
