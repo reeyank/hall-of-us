@@ -1,8 +1,70 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { uploadMemoryStub } from "../../api";
 import Tag from "../ui/Tag";
 import { useCedarStore } from "cedar-os";
+import { Edit, Share, Download, Heart, Star, Trash } from "lucide-react";
+import dynamic from 'next/dynamic';
+import RadialMenuSpell from '../../../src/cedar/components/spells/RadialMenuSpell'
+import { MouseEvent, ActivationMode } from 'cedar-os';
+import TouchEnabledWrapper from '../touch/TouchEnabledWrapper'
+
+
+function MyComponent() {
+	const menuItems = [
+		{
+			title: 'Copy',
+			icon: Download,
+			onInvoke: (store) => {
+				// Access Cedar store for actions
+				console.log('Copy action');
+			},
+		},
+		{
+			title: 'Edit',
+			icon: Heart,
+			onInvoke: (store) => {
+				console.log('Edit action');
+			},
+		},
+		{
+			title: 'Share',
+			icon: Share,
+			onInvoke: (store) => {
+				console.log('Share action');
+			},
+		},
+		{
+			title: 'Delete',
+			icon: Trash,
+			onInvoke: (store) => {
+				console.log('Delete action');
+			},
+		},
+	];
+  console.log("Rendering MyComponent");
+
+	return (
+
+<TouchEnabledWrapper
+  touchMapping={{
+    doubleTap: MouseEvent.DOUBLE_CLICK,    // Double tap -> Double click
+    longPress: MouseEvent.RIGHT_CLICK,     // Long press -> Right click
+    tripleTap: MouseEvent.MIDDLE_CLICK,    // Triple tap -> Middle click
+  }}
+>
+		<RadialMenuSpell
+			spellId='my-radial-menu'
+			items={menuItems}
+			activationConditions={{
+				events: [MouseEvent.RIGHT_CLICK],
+				mode: ActivationMode.HOLD,
+			}}
+		/>
+</TouchEnabledWrapper>
+	);
+}
+
 
 // Dummy tags for autocomplete (in real app, this would come from backend)
 const AVAILABLE_TAGS = [
@@ -416,17 +478,21 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
 
           </div>
         </div>
-      </div>
 
-      {/* Success Toast */}
-      {showToast && (
-        <div className="fixed top-4 left-4 right-4 z-[60] bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 ease-out">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">✅</span>
-            <span className="font-medium">Memory uploaded successfully!</span>
+        {/* Radial Menu for contextual actions */}
+        <MyComponent />
+
+
+        {/* Success Toast */}
+        {showToast && (
+          <div className="fixed top-4 left-4 right-4 z-[60] bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 ease-out">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">✅</span>
+              <span className="font-medium">Memory uploaded successfully!</span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </>
   );
 }
