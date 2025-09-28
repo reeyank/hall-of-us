@@ -71,22 +71,19 @@ export function TouchEnabledWrapper({
     touchState.current.isLongPress = false;
   };
 
-  const triggerMouseEvent = (eventType: MouseEvent, originalEvent: TouchEvent | MouseEvent) => {
+  const triggerMouseEvent = (eventType: string, clientX: number, clientY: number, button: number = 0) => {
     if (!elementRef.current) return;
 
-    // Create a synthetic mouse event that cedar-os can understand
-    const syntheticEvent = new CustomEvent('cedar-touch-event', {
-      detail: {
-        mouseEvent: eventType,
-        originalEvent,
-        position: {
-          x: 'touches' in originalEvent ? originalEvent.touches[0]?.clientX : (originalEvent as MouseEvent).clientX,
-          y: 'touches' in originalEvent ? originalEvent.touches[0]?.clientY : (originalEvent as MouseEvent).clientY,
-        }
-      }
+    const mouseEvent = new MouseEvent(eventType, {
+      bubbles: true,
+      cancelable: true,
+      clientX,
+      clientY,
+      button,
+      buttons: button === 0 ? 1 : button === 2 ? 2 : 4, // Left, right, or middle button
     });
 
-    elementRef.current.dispatchEvent(syntheticEvent);
+    elementRef.current.dispatchEvent(mouseEvent);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -102,7 +99,14 @@ export function TouchEnabledWrapper({
     if (touchMapping.longPress) {
       longPressTimer.current = setTimeout(() => {
         touchState.current.isLongPress = true;
-        triggerMouseEvent(touchMapping.longPress!, e.nativeEvent);
+        // Trigger mousedown for hold behavior (like right-click and hold)
+        const button = touchMapping.longPress === MouseEvent.RIGHT_CLICK ? 2 : 0;
+        triggerMouseEvent('mousedown', touch.clientX, touch.clientY, button);
+
+        // Also trigger contextmenu if it's a right-click mapping
+        if (touchMapping.longPress === MouseEvent.RIGHT_CLICK) {
+          triggerMouseEvent('contextmenu', touch.clientX, touch.clientY, button);
+        }
       }, touchConfig.longPressDelay);
     }
   };
@@ -184,6 +188,13 @@ export function TouchEnabledWrapper({
         children.props.onTouchStart(e);
       }
     },
+    onTouchMove: (e: React.TouchEvent) => {
+      handleTouchMove(e);
+      // Call original onTouchMove if it exists
+      if (children.props.onTouchMove) {
+        children.props.onTouchMove(e);
+      }
+    },
     onTouchEnd: (e: React.TouchEvent) => {
       handleTouchEnd(e);
       // Call original onTouchEnd if it exists
@@ -200,7 +211,7 @@ export function TouchEnabledWrapper({
     },
     style: {
       ...children.props.style,
-      touchAction: 'manipulation', // Improve touch responsiveness
+      touchAction: 'none', // Prevent default touch behaviors during drag
       userSelect: 'none', // Prevent text selection on touch
     }
   });

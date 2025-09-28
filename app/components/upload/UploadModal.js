@@ -52,6 +52,9 @@ function MyComponent() {
     longPress: MouseEvent.RIGHT_CLICK,     // Long press -> Right click
     tripleTap: MouseEvent.MIDDLE_CLICK,    // Triple tap -> Middle click
   }}
+  touchConfig={{
+    longPressDuration: 500, // Duration in ms to recognize a long press
+  }}
 >
 		<RadialMenuSpell
 			spellId='my-radial-menu'
