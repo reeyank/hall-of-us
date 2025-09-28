@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import React, { useRef, useEffect, cloneElement } from 'react';
 import { MouseEvent } from 'cedar-os';
 
@@ -41,14 +41,14 @@ export function TouchEnabledWrapper({
     doubleTapDelay: 300,
     tripleTapDelay: 400,
     longPressDelay: 500,
-    tapThreshold: 10
-  }
+    tapThreshold: 10,
+  },
 }: TouchEnabledWrapperProps) {
   const touchState = useRef<TouchState>({
     tapCount: 0,
     startTime: 0,
     startPos: { x: 0, y: 0 },
-    isLongPress: false
+    isLongPress: false,
   });
 
   const tapTimer = useRef<NodeJS.Timeout | null>(null);
@@ -71,7 +71,12 @@ export function TouchEnabledWrapper({
     touchState.current.isLongPress = false;
   };
 
-  const triggerMouseEvent = (eventType: string, clientX: number, clientY: number, button: number = 0) => {
+  const triggerMouseEvent = (
+    eventType: string,
+    clientX: number,
+    clientY: number,
+    button: number = 0
+  ) => {
     if (!elementRef.current) return;
 
     const mouseEvent = new window.MouseEvent(eventType, {
@@ -100,12 +105,18 @@ export function TouchEnabledWrapper({
       longPressTimer.current = setTimeout(() => {
         touchState.current.isLongPress = true;
         // Trigger mousedown for hold behavior (like right-click and hold)
-        const button = touchMapping.longPress === MouseEvent.RIGHT_CLICK ? 2 : 0;
+        const button =
+          touchMapping.longPress === MouseEvent.RIGHT_CLICK ? 2 : 0;
         triggerMouseEvent('mousedown', touch.clientX, touch.clientY, button);
 
         // Also trigger contextmenu if it's a right-click mapping
         if (touchMapping.longPress === MouseEvent.RIGHT_CLICK) {
-          triggerMouseEvent('contextmenu', touch.clientX, touch.clientY, button);
+          triggerMouseEvent(
+            'contextmenu',
+            touch.clientX,
+            touch.clientY,
+            button
+          );
         }
       }, touchConfig.longPressDelay);
     }
@@ -145,7 +156,10 @@ export function TouchEnabledWrapper({
     }
 
     // Handle tap events with delay to detect multiple taps
-    const delay = touchState.current.tapCount <= 2 ? touchConfig.doubleTapDelay : touchConfig.tripleTapDelay;
+    const delay =
+      touchState.current.tapCount <= 2
+        ? touchConfig.doubleTapDelay
+        : touchConfig.tripleTapDelay;
 
     tapTimer.current = setTimeout(() => {
       switch (touchState.current.tapCount) {
@@ -156,14 +170,18 @@ export function TouchEnabledWrapper({
           break;
         case 2:
           if (touchMapping.doubleTap) {
-            const eventType = touchMapping.doubleTap === MouseEvent.DOUBLE_CLICK ? 'dblclick' : 'click';
+            const eventType =
+              touchMapping.doubleTap === MouseEvent.DOUBLE_CLICK
+                ? 'dblclick'
+                : 'click';
             triggerMouseEvent(eventType, touch.clientX, touch.clientY);
           }
           break;
         case 3:
           if (touchMapping.tripleTap) {
             const eventType = 'click';
-            const button = touchMapping.tripleTap === MouseEvent.MIDDLE_CLICK ? 1 : 0;
+            const button =
+              touchMapping.tripleTap === MouseEvent.MIDDLE_CLICK ? 1 : 0;
             triggerMouseEvent(eventType, touch.clientX, touch.clientY, button);
           }
           break;
@@ -229,7 +247,7 @@ export function TouchEnabledWrapper({
       ...(children.props as any).style,
       touchAction: 'none', // Prevent default touch behaviors during drag
       userSelect: 'none', // Prevent text selection on touch
-    }
+    },
   });
 
   return childWithTouchHandlers;
@@ -247,7 +265,7 @@ export function useTouchGestures(
     tapCount: 0,
     startTime: 0,
     startPos: { x: 0, y: 0 },
-    isLongPress: false
+    isLongPress: false,
   });
 
   const tapTimer = useRef<NodeJS.Timeout | null>(null);
@@ -258,7 +276,7 @@ export function useTouchGestures(
     tripleTapDelay: 400,
     longPressDelay: 500,
     tapThreshold: 10,
-    ...touchConfig
+    ...touchConfig,
   };
 
   const clearTimers = () => {
@@ -289,24 +307,29 @@ export function useTouchGestures(
           touchState.current.isLongPress = true;
 
           // Trigger mousedown for long press start
-          const button = touchMapping.longPress === MouseEvent.RIGHT_CLICK ? 2 : 0;
-          e.currentTarget.dispatchEvent(new window.MouseEvent('mousedown', {
-            bubbles: true,
-            cancelable: true,
-            clientX: touch.clientX,
-            clientY: touch.clientY,
-            button,
-            buttons: button === 0 ? 1 : button === 2 ? 2 : 4,
-          }));
-
-          // Also trigger contextmenu if it's a right-click mapping
-          if (touchMapping.longPress === MouseEvent.RIGHT_CLICK) {
-            e.currentTarget.dispatchEvent(new window.MouseEvent('contextmenu', {
+          const button =
+            touchMapping.longPress === MouseEvent.RIGHT_CLICK ? 2 : 0;
+          e.currentTarget.dispatchEvent(
+            new window.MouseEvent('mousedown', {
               bubbles: true,
               cancelable: true,
               clientX: touch.clientX,
               clientY: touch.clientY,
-            }));
+              button,
+              buttons: button === 0 ? 1 : button === 2 ? 2 : 4,
+            })
+          );
+
+          // Also trigger contextmenu if it's a right-click mapping
+          if (touchMapping.longPress === MouseEvent.RIGHT_CLICK) {
+            e.currentTarget.dispatchEvent(
+              new window.MouseEvent('contextmenu', {
+                bubbles: true,
+                cancelable: true,
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+              })
+            );
           }
         }, config.longPressDelay);
       }
@@ -317,12 +340,14 @@ export function useTouchGestures(
 
       // During long press, emit mousemove events to enable radial menu highlighting
       if (touchState.current.isLongPress) {
-        e.currentTarget.dispatchEvent(new window.MouseEvent('mousemove', {
-          bubbles: true,
-          cancelable: true,
-          clientX: touch.clientX,
-          clientY: touch.clientY,
-        }));
+        e.currentTarget.dispatchEvent(
+          new window.MouseEvent('mousemove', {
+            bubbles: true,
+            cancelable: true,
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+          })
+        );
       }
     },
 
@@ -334,15 +359,18 @@ export function useTouchGestures(
 
       if (touchState.current.isLongPress) {
         // Trigger mouseup to end the drag operation
-        const button = touchMapping.longPress === MouseEvent.RIGHT_CLICK ? 2 : 0;
-        e.currentTarget.dispatchEvent(new window.MouseEvent('mouseup', {
-          bubbles: true,
-          cancelable: true,
-          clientX: touch.clientX,
-          clientY: touch.clientY,
-          button,
-          buttons: button === 0 ? 1 : button === 2 ? 2 : 4,
-        }));
+        const button =
+          touchMapping.longPress === MouseEvent.RIGHT_CLICK ? 2 : 0;
+        e.currentTarget.dispatchEvent(
+          new window.MouseEvent('mouseup', {
+            bubbles: true,
+            cancelable: true,
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            button,
+            buttons: button === 0 ? 1 : button === 2 ? 2 : 4,
+          })
+        );
         resetTouchState();
         return;
       }
@@ -358,28 +386,35 @@ export function useTouchGestures(
       }
 
       // Handle taps
-      const delay = touchState.current.tapCount <= 2 ? config.doubleTapDelay : config.tripleTapDelay;
+      const delay =
+        touchState.current.tapCount <= 2
+          ? config.doubleTapDelay
+          : config.tripleTapDelay;
 
       tapTimer.current = setTimeout(() => {
         const tapCount = touchState.current.tapCount;
 
         if (tapCount === 2 && touchMapping.doubleTap) {
           // Trigger double-click event
-          e.currentTarget.dispatchEvent(new window.MouseEvent('dblclick', {
-            bubbles: true,
-            cancelable: true,
-            clientX: touch.clientX,
-            clientY: touch.clientY,
-          }));
+          e.currentTarget.dispatchEvent(
+            new window.MouseEvent('dblclick', {
+              bubbles: true,
+              cancelable: true,
+              clientX: touch.clientX,
+              clientY: touch.clientY,
+            })
+          );
         } else if (tapCount === 3 && touchMapping.tripleTap) {
           // Trigger middle-click or custom event for triple tap
-          e.currentTarget.dispatchEvent(new window.MouseEvent('click', {
-            bubbles: true,
-            cancelable: true,
-            clientX: touch.clientX,
-            clientY: touch.clientY,
-            button: 1, // Middle button
-          }));
+          e.currentTarget.dispatchEvent(
+            new window.MouseEvent('click', {
+              bubbles: true,
+              cancelable: true,
+              clientX: touch.clientX,
+              clientY: touch.clientY,
+              button: 1, // Middle button
+            })
+          );
         }
 
         resetTouchState();
@@ -394,7 +429,7 @@ export function useTouchGestures(
     cleanup: () => {
       clearTimers();
       resetTouchState();
-    }
+    },
   };
 }
 
