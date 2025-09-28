@@ -93,6 +93,33 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
   // Cedar: open chat and push context
   const setShowChat = useCedarStore((s) => s.setShowChat);
 
+  // Helpers to convert File or preview URL to base64 data URL
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      if (!file) return resolve(null);
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const blobUrlToBase64 = async (url) => {
+    try {
+      const resp = await fetch(url);
+      const blob = await resp.blob();
+      return await fileToBase64(blob);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const getFileBase64 = async () => {
+    if (file) return await fileToBase64(file);
+    if (preview) return await blobUrlToBase64(preview);
+    return null;
+  };
+
   const openCedarEnhance = (imgUrl) => {
     try {
       const store = useCedarStore.getState();
@@ -126,6 +153,14 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
       console.log("Cedar chat store not available");
       // ignore
     }
+  };
+
+  const handleEnhanceClick = async () => {
+    const fileBase64 = await getFileBase64();
+    // prefer base64 data if available, otherwise fallback to preview URL
+    const payload = fileBase64 ?? preview ?? undefined;
+    openCedarEnhance(payload);
+    if (typeof onOpenEnhance === 'function') onOpenEnhance(payload);
   };
 
   useEffect(() => {
@@ -244,12 +279,14 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
     try {
       const store = useCedarStore.getState();
 
-      const response = await fetch('http://localhost:8000/chat/generate-tags', {
+      const fileBase64 = await getFileBase64();
+      const response = await fetch('http://localhost:8000/langchain/chat/generate-tags', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          image_base64: fileBase64,
           image_url: preview,
           current_tags: selectedTags,
           cedar_state: {
@@ -281,12 +318,14 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
       const needed = Math.max(0, maxTags - selectedTags.length);
       if (needed <= 0) return;
 
-      const response = await fetch('http://localhost:8000/chat/fill-tags', {
+      const fileBase64 = await getFileBase64();
+      const response = await fetch('http://localhost:8000/langchain/chat/fill-tags', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          image_base64: fileBase64,
           image_url: preview,
           current_tags: selectedTags,
           max_tags: maxTags,
@@ -321,12 +360,14 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
     try {
       const store = useCedarStore.getState();
 
-      const response = await fetch('http://localhost:8000/chat/generate-caption', {
+      const fileBase64 = await getFileBase64();
+      const response = await fetch('http://localhost:8000/langchain/chat/generate-caption', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          image_base64: fileBase64,
           image_url: preview,
           tags: selectedTags,
           filename: file?.name,
@@ -363,12 +404,14 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
     try {
       const store = useCedarStore.getState();
 
-      const response = await fetch('http://localhost:8000/chat/fill-caption', {
+      const fileBase64 = await getFileBase64();
+      const response = await fetch('http://localhost:8000/langchain/chat/fill-caption', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          image_base64: fileBase64,
           image_url: preview,
           current_caption: caption,
           tags: selectedTags,
@@ -417,7 +460,14 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
 
     try {
       const form = new FormData();
-      form.append("file", file);
+      // Convert file/preview to base64 and include it in the payload
+      const fileBase64 = await getFileBase64();
+      if (fileBase64) {
+        form.append("file_base64", fileBase64);
+      } else {
+        // Fallback to the raw file if conversion failed
+        form.append("file", file);
+      }
       form.append("tags", selectedTags.join(","));
       form.append("caption", caption);
       form.append("user_id", localStorage.getItem("user"));
@@ -605,10 +655,7 @@ export default function UploadModal({ open, onClose, onUpload, onOpenEnhance }) 
                   </button>
                   <button
                     className="w-full py-3 px-4 rounded-lg font-medium transition-colors border border-gray-300 hover:bg-gray-50 text-gray-700"
-                    onClick={() => {
-                      openCedarEnhance(preview ?? undefined);
-                      if (typeof onOpenEnhance === 'function') onOpenEnhance(preview ?? undefined);
-                    }}
+                    onClick={handleEnhanceClick}
                   >
                     ✨ Enhance with AI
                   </button>
