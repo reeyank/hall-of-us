@@ -1,4 +1,14 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Hall of Us
+
+Welcome to **Hall of Us**, a museum-inspired social memories app developed during **HackGT**. This project combines cutting-edge technology with a creative theme to bring memories to life in a collaborative and interactive way.
+
+## Project Highlights
+
+- **Hackathon Theme**: Designed for HackGT, this project revolves around the concept of a digital museum where users can create, share, and explore social memories.
+- **Cedar OS Integration**: Leveraged Cedar OS to seamlessly integrate AI agents into our React context, enabling dynamic and intelligent interactions.
+- **Custom Backend Debugging**: Built and debugged custom backends to support the app's unique features and ensure smooth data flow.
+- **Touch Wrapper for Cedar Spells**: Developed a new touch wrapper compatible with Cedar spells, enhancing the app's interactivity and user experience.
+- **Next.js Framework**: Utilized Next.js for its powerful server-side rendering and API capabilities.
 
 ## Getting Started
 
@@ -22,10 +32,11 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+To learn more about the technologies used in this project, take a look at the following resources:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [Next.js Documentation](https://nextjs.org/docs) - Learn about Next.js features and API.
+- [Cedar OS Documentation](https://cedar-os.com/docs) - Explore Cedar OS and its capabilities.
+- [HackGT](https://hack.gt) - Discover the hackathon where this project was created.
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
