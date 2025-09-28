@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Heart } from "lucide-react";
 
-export default function MemoryCard({ memory }) {
+export default function MemoryCard({ memory, onTagClick }) {
   console.log(memory);
   const [likes, setLikes] = useState(memory.likes || 0);
   const [liked, setLiked] = useState(false);
@@ -87,8 +87,17 @@ export default function MemoryCard({ memory }) {
               />
             </button>
             <span className="text-white font-medium">{likes}</span>
-            <div className="text-blue-400 text-sm ml-4">
-              {memory.tags.map((t) => `#${t} `)}
+            <div className="flex flex-wrap gap-1 ml-4">
+              {memory.tags.map((tag, index) => (
+                <button
+                  key={index}
+                  onClick={() => onTagClick && onTagClick(tag)}
+                  className="text-blue-400 text-sm hover:text-blue-300 hover:bg-blue-400/20 px-2 py-1 rounded-md transition-all duration-200 cursor-pointer"
+                  title={`Find similar posts with #${tag}`}
+                >
+                  #{tag}
+                </button>
+              ))}
             </div>
           </div>
         </div>

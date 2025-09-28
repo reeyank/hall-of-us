@@ -144,3 +144,88 @@ export const getMemoryToRemoveFromChat = async (chatContext, allMemories) => {
     throw error;
   }
 };
+
+export const findSimilarPostsByTag = async (tag, allMemories) => {
+  try {
+    // Filter memories that contain the selected tag
+    const similarPosts = allMemories.filter(memory => 
+      memory.tags.includes(tag)
+    );
+
+    // Sort by relevance (number of matching tags, then by creation date)
+    const sortedPosts = similarPosts.sort((a, b) => {
+      // Calculate tag overlap score
+      const aTagOverlap = a.tags.filter(t => t === tag).length;
+      const bTagOverlap = b.tags.filter(t => t === tag).length;
+      
+      if (aTagOverlap !== bTagOverlap) {
+        return bTagOverlap - aTagOverlap;
+      }
+      
+      // If same tag overlap, sort by creation date (newest first)
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    return {
+      success: true,
+      posts: sortedPosts,
+      tag: tag,
+      count: sortedPosts.length,
+      message: `Found ${sortedPosts.length} posts with tag #${tag}`
+    };
+  } catch (error) {
+    console.error('Error finding similar posts by tag:', error);
+    return {
+      success: false,
+      posts: [],
+      tag: tag,
+      count: 0,
+      message: `Error finding posts with tag #${tag}: ${error.message}`
+    };
+  }
+};
+
+export const findSimilarPostsAdvanced = async (selectedMemory, allMemories) => {
+  try {
+    // Advanced similarity search based on multiple factors
+    const similarPosts = allMemories
+      .filter(memory => memory.id !== selectedMemory.id) // Exclude the selected memory itself
+      .map(memory => {
+        let score = 0;
+        
+        // Tag similarity (highest weight)
+        const tagIntersection = memory.tags.filter(tag => selectedMemory.tags.includes(tag));
+        score += tagIntersection.length * 3;
+        
+        // User similarity (medium weight)
+        if (memory.userId === selectedMemory.userId) {
+          score += 2;
+        }
+        
+        // Date proximity (lower weight)
+        const daysDiff = Math.abs(new Date(memory.createdAt) - new Date(selectedMemory.createdAt)) / (1000 * 60 * 60 * 24);
+        if (daysDiff < 7) score += 1; // Within a week
+        
+        return { ...memory, similarityScore: score, sharedTags: tagIntersection };
+      })
+      .filter(memory => memory.similarityScore > 0) // Only include memories with some similarity
+      .sort((a, b) => b.similarityScore - a.similarityScore); // Sort by similarity score
+
+    return {
+      success: true,
+      posts: similarPosts,
+      baseMemory: selectedMemory,
+      count: similarPosts.length,
+      message: `Found ${similarPosts.length} similar posts`
+    };
+  } catch (error) {
+    console.error('Error finding similar posts:', error);
+    return {
+      success: false,
+      posts: [],
+      baseMemory: selectedMemory,
+      count: 0,
+      message: `Error finding similar posts: ${error.message}`
+    };
+  }
+};
